@@ -10,6 +10,9 @@ from transitions.core import MachineError
 from state_machine_core import Matter, CustomStateMachine
 
 
+from conditions_table_view import TableViewContainsSearchWidget
+
+
 # 定义不同层级的拖动锚点颜色
 LEVEL_COLORS = [
     Qt.GlobalColor.red,
@@ -723,29 +726,27 @@ class MainWindow(QWidget):
 
         layout.addWidget(self.state_machine)
 
-        h_widget = QWidget()
-        h_widget.setLayout(QHBoxLayout())
-        # 创建 ComboBox 并添加所有 trigger
-        self.combobox = QComboBox()
-        added_triggers = set()  # 用于记录已添加的选项
+        added_triggers = set()
+        conditions_ret = dict()
         for transition in self.state_machine.json_transitions:
             trigger = transition['trigger']
+            condition_name = transition['conditions']
             if trigger not in added_triggers:
-                self.combobox.addItem(trigger)
                 added_triggers.add(trigger)
-        h_widget.layout().addWidget(self.combobox)
+                
+            if condition_name not in conditions_ret:
+                conditions_ret[condition_name] = 1
 
-        # 创建按钮
-        self.button = QPushButton('Trigger State Transition')
-        self.button.clicked.connect(lambda b, combobox=self.combobox : self.state_machine.trigger_transition(b, combobox))
-        h_widget.layout().addWidget(self.button)
-        # size_policy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
-        # h_widget.setSizePolicy(size_policy)
-        h_widget.layout().setContentsMargins(5, 5, 5, 5)
-        h_widget.layout().setSpacing(5)
-        h_widget.setMaximumHeight(40)
+        self.triggers_combobox = QComboBox()
+        self.triggers_combobox.addItems(sorted(added_triggers))
 
-        layout.addWidget(h_widget)
+        self.button = QPushButton('Trigger')
+        self.button.clicked.connect(lambda b, combobox=self.triggers_combobox : self.state_machine.trigger_transition(b, combobox))
+
+        self.table_view_w_search = TableViewContainsSearchWidget(extra_widgets=[self.triggers_combobox, self.button])
+        self.table_view_w_search.setMaximumHeight(250)
+        self.table_view_w_search.table_view.add_conditions(conditions_ret) 
+        layout.addWidget(self.table_view_w_search)
 
         self.setLayout(layout)
 
