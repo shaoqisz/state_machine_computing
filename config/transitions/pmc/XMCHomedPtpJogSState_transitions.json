@@ -1,0 +1,6 @@
+[
+{"trigger":"PMC_AXIS_POSITION_FOLLOWING_BKST",      "conditions":"XMCHomedPtpJogPosFollowingITrans",        "source": "XMCMachine_XMCEstopClosedSState_XMCHomedPtpJogSState",     "dest":""},
+{"trigger":"PMC_JOG_REQ",                           "conditions":"XMCHomedPtpJogMoveReqITrans",             "source": "XMCMachine_XMCEstopClosedSState_XMCHomedPtpJogSState",     "dest":""},
+{"trigger":"PMC_POSITION_REQ",                      "conditions":"XMCHomedPtpJogMoveReqITrans",             "source": "XMCMachine_XMCEstopClosedSState_XMCHomedPtpJogSState",     "dest":""},
+{"trigger":"PMC_STOP_REQ",                          "conditions":"XMCHomedPtpJogToStoppingNTrans",          "source": "XMCMachine_XMCEstopClosedSState_XMCHomedPtpJogSState",     "dest":"XMCMachine_XMCEstopClosedSState_XMCHomedPtpJogSState_XMCHomedStoppingState"}
+]

@@ -1,0 +1,270 @@
+[
+    {
+        "name": "XMCMachine",
+        "rect": [
+            -654,
+            -390,
+            2933,
+            1912
+        ],
+        "children": [
+            {
+                "name": "XMCPowerUpSState",
+                "rect": [
+                    -523,
+                    -340,
+                    503,
+                    349
+                ],
+                "children": [
+                    {
+                        "name": "XMCWaitCouchTypeState",
+                        "rect": [
+                            -230,
+                            -290,
+                            200,
+                            40
+                        ],
+                        "children": []
+                    },
+                    {
+                        "name": "XMCAxisPowerUpState",
+                        "rect": [
+                            -513,
+                            -41,
+                            200,
+                            40
+                        ],
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "name": "XMCAxisInitSState",
+                "rect": [
+                    219,
+                    -328,
+                    974,
+                    387
+                ],
+                "children": [
+                    {
+                        "name": "XMCInitializeAxisState",
+                        "rect": [
+                            724,
+                            -278,
+                            200,
+                            40
+                        ],
+                        "children": []
+                    },
+                    {
+                        "name": "XMCAxisInitializedState",
+                        "rect": [
+                            983,
+                            -46,
+                            200,
+                            40
+                        ],
+                        "children": []
+                    },
+                    {
+                        "name": "XMCWaitHwStopState",
+                        "rect": [
+                            229,
+                            9,
+                            200,
+                            40
+                        ],
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "name": "XMCEstopClosedSState",
+                "rect": [
+                    -391,
+                    451,
+                    2660,
+                    1061
+                ],
+                "children": [
+                    {
+                        "name": "XMCServoPowerWaitMinSpeedState",
+                        "rect": [
+                            209,
+                            648,
+                            200,
+                            40
+                        ],
+                        "children": []
+                    },
+                    {
+                        "name": "XMCServoPowerCheckState",
+                        "rect": [
+                            -89,
+                            1236,
+                            200,
+                            40
+                        ],
+                        "children": []
+                    },
+                    {
+                        "name": "XMCRecoveryState",
+                        "rect": [
+                            -381,
+                            1036,
+                            200,
+                            40
+                        ],
+                        "children": []
+                    },
+                    {
+                        "name": "XMCHomedPtpJogSState",
+                        "rect": [
+                            654,
+                            501,
+                            1605,
+                            1001
+                        ],
+                        "children": [
+                            {
+                                "name": "XMCHomedInPositionState",
+                                "rect": [
+                                    771,
+                                    776,
+                                    200,
+                                    40
+                                ],
+                                "children": []
+                            },
+                            {
+                                "name": "XMCHomedStoppingState",
+                                "rect": [
+                                    1637,
+                                    551,
+                                    200,
+                                    40
+                                ],
+                                "children": []
+                            },
+                            {
+                                "name": "XMCHomedJogSState",
+                                "rect": [
+                                    1604,
+                                    862,
+                                    645,
+                                    446
+                                ],
+                                "children": [
+                                    {
+                                        "name": "XMCHomedJogWaitModeState",
+                                        "rect": [
+                                            2039,
+                                            1144,
+                                            200,
+                                            40
+                                        ],
+                                        "children": []
+                                    },
+                                    {
+                                        "name": "XMCHomedWaitForStartMotionState",
+                                        "rect": [
+                                            1643,
+                                            912,
+                                            200,
+                                            40
+                                        ],
+                                        "children": []
+                                    },
+                                    {
+                                        "name": "XMCHomedPtpMovingState",
+                                        "rect": [
+                                            1614,
+                                            1258,
+                                            200,
+                                            40
+                                        ],
+                                        "children": []
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "XMCHomedPtpSState",
+                                "rect": [
+                                    664,
+                                    1030,
+                                    787,
+                                    462
+                                ],
+                                "children": [
+                                    {
+                                        "name": "XMCHomedPtpWaitModeState",
+                                        "rect": [
+                                            1241,
+                                            1080,
+                                            200,
+                                            40
+                                        ],
+                                        "children": []
+                                    },
+                                    {
+                                        "name": "XMCHomedWaitForStartMotionState",
+                                        "rect": [
+                                            674,
+                                            1442,
+                                            200,
+                                            40
+                                        ],
+                                        "children": []
+                                    },
+                                    {
+                                        "name": "XMCHomedPtpMovingState",
+                                        "rect": [
+                                            1199,
+                                            1259,
+                                            200,
+                                            40
+                                        ],
+                                        "children": []
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "name": "XMCServiceModeSState",
+                "rect": [
+                    -644,
+                    101,
+                    220,
+                    217
+                ],
+                "children": [
+                    {
+                        "name": "XMCServiceStopState",
+                        "rect": [
+                            -634,
+                            151,
+                            200,
+                            40
+                        ],
+                        "children": []
+                    },
+                    {
+                        "name": "XMCServiceMovingState",
+                        "rect": [
+                            -634,
+                            268,
+                            200,
+                            40
+                        ],
+                        "children": []
+                    }
+                ]
+            }
+        ]
+    }
+]

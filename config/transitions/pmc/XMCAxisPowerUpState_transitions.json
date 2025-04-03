@@ -1,0 +1,5 @@
+[
+    {"trigger": "state_timer",      "conditions": "XMCAxisPowerUpITrans",                    "source": "XMCMachine_XMCPowerUpSState_XMCAxisPowerUpState",     "dest": ""},
+    {"trigger": "state_timer",      "conditions": "XMCAxisPowerUpToInitializeAxisNTrans",    "source": "XMCMachine_XMCPowerUpSState_XMCAxisPowerUpState",     "dest": "XMCMachine_XMCAxisInitSState_XMCInitializeAxisState"},
+    {"trigger": "state_timer",      "conditions": "XMCAxisPowerUpToAxisInitializedNTrans",   "source": "XMCMachine_XMCPowerUpSState_XMCAxisPowerUpState",     "dest": "XMCMachine_XMCAxisInitSState_XMCAxisInitializedState"}
+]

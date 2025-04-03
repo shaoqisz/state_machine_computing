@@ -1,0 +1,3 @@
+[
+{"trigger":"PMC_AXIS_POSITIONS_BKST",   "conditions": "XMCHomedPtpToStoppingNTrans",  "source":"XMCMachine_XMCEstopClosedSState_XMCHomedPtpJogSState_XMCHomedPtpSState", "dest":"XMCMachine_XMCEstopClosedSState_XMCHomedPtpJogSState_XMCHomedStoppingState"}
+]

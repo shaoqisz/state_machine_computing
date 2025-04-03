@@ -1,0 +1,6 @@
+[
+    {"trigger":"IOMC_OPEN_SERVO_POWER_CONTACTOR",           "conditions":"XMCRecoveryOpenServoPowerITrans",         "source":"XMCMachine_XMCEstopClosedSState_XMCRecoveryState", "dest":""},
+    {"trigger":"IOMC_OPEN_SERVO_POWER_CONTACTOR",           "conditions":"XMCRecoveryITrans",                       "source":"XMCMachine_XMCEstopClosedSState_XMCRecoveryState", "dest":""},
+    {"trigger":"xmc_fault",                                 "conditions":"XMCRecoveryITrans",                       "source":"XMCMachine_XMCEstopClosedSState_XMCRecoveryState", "dest":""},
+    {"trigger":"state_timer",                               "conditions":"XMCRecoveryToWaitMinSpeedTrans",          "source":"XMCMachine_XMCEstopClosedSState_XMCRecoveryState", "dest":"XMCMachine_XMCEstopClosedSState_XMCServoPowerWaitMinSpeedState"}
+]

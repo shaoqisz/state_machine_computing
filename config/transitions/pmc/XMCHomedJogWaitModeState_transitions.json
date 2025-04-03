@@ -1,0 +1,5 @@
+[
+{"trigger":"state_timer",          "conditions":"XMCHomedJogWaitModeITrans",                           "source":"XMCMachine_XMCEstopClosedSState_XMCHomedPtpJogSState_XMCHomedJogSState_XMCHomedJogWaitModeState", "dest":""},
+{"trigger":"state_timer",          "conditions":"XMCHomedJogWaitModeToWaitForStartMotionBackupTrans",  "source":"XMCMachine_XMCEstopClosedSState_XMCHomedPtpJogSState_XMCHomedJogSState_XMCHomedJogWaitModeState", "dest":"XMCMachine_XMCEstopClosedSState_XMCHomedPtpJogSState_XMCHomedJogSState_XMCHomedWaitForStartMotionState"},
+{"trigger":"PMC_JOG_MODE_ON_BKST", "conditions":"XMCHomedJogWaitModeToWaitForStartMotionTrans",        "source":"XMCMachine_XMCEstopClosedSState_XMCHomedPtpJogSState_XMCHomedJogSState_XMCHomedJogWaitModeState", "dest":"XMCMachine_XMCEstopClosedSState_XMCHomedPtpJogSState_XMCHomedJogSState_XMCHomedWaitForStartMotionState"}
+]

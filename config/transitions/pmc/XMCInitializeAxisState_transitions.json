@@ -1,0 +1,4 @@
+[
+  {"trigger":"state_timer",                                 "conditions": "XMCInitializeAxisITrans",                   "source":"XMCMachine_XMCAxisInitSState_XMCInitializeAxisState", "dest":""},
+  {"trigger":"state_timer",                                 "conditions": "XMCInitializeAxisToInitializedTrans",       "source":"XMCMachine_XMCAxisInitSState_XMCInitializeAxisState", "dest":"XMCMachine_XMCAxisInitSState_XMCAxisInitializedState"}
+]

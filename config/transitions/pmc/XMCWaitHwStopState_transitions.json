@@ -1,0 +1,5 @@
+[
+  {"trigger":"state_timer",                                 "conditions":"XMCWaitHwStopToInitializeAxisTrans",            "source":"XMCMachine_XMCAxisInitSState_XMCWaitHwStopState", "dest":"XMCMachine_XMCAxisInitSState_XMCInitializeAxisState"},
+  {"trigger":"state_timer",                                 "conditions":"XMCWaitHwStopToAxisInitializedTrans",           "source":"XMCMachine_XMCAxisInitSState_XMCWaitHwStopState", "dest":"XMCMachine_XMCAxisInitSState_XMCAxisInitializedState"}, 
+  {"trigger":"COUCH_ESTOP_CLOSED_BKST",                     "conditions":"XMCAxisInitializedToWaitForMinSpeedNTrans",     "source":"XMCMachine_XMCAxisInitSState_XMCWaitHwStopState", "dest":"XMCMachine_XMCEstopClosedSState_XMCServoPowerWaitMinSpeedState"}
+]
