@@ -86,8 +86,11 @@ class RecursiveFilterProxyModel(QSortFilterProxyModel):
                 return True
 
         return super().filterAcceptsRow(source_row, source_parent)
-    
+
+
 class MyTableView(QTableView):
+    condition_allowed_changed = pyqtSignal(str, str)
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.regex_cache = {}
@@ -168,8 +171,9 @@ class MyTableView(QTableView):
                 condition_item = self.table_model.item(row, 2)
                 allowed_item = self.table_model.item(row, 4)
                 if condition_item and condition_item and condition == condition_item.text() and allowed_item.text() != text:
-                    # print(f'current condition_item={condition_item.text()} allowed={allowed_item.text()}')
                     allowed_item.setText(text)
+                    # print(f'on_delegate_value_changed condition_item={condition_item.text()} allowed={allowed_item.text()}')
+                    self.condition_allowed_changed.emit(condition_item.text(), allowed_item.text())
 
     def set_transitions(self, json_transitions):
         self.clear_data()
@@ -198,6 +202,8 @@ class MyTableView(QTableView):
             item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
             self.table_model.setItem(row, column, item)
             
+            # print(f'set_transitions condition_item={item.text()} allowed=Yes')
+            
             column = column + 1
             item = QStandardItem('-' if len(dest) == 0 else dest)
             item.setEditable(False)
@@ -209,6 +215,8 @@ class MyTableView(QTableView):
             item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
             self.table_model.setItem(row, column, item)
     
+
+
     def get_selected_row(self):
         selections = self.selectionModel()
         selected = selections.selectedIndexes()
@@ -257,7 +265,7 @@ class MyTableView(QTableView):
             condition_item = self.table_model.item(row, 2)
             allowed_item = self.table_model.item(row, 4)
             if condition_item and condition_item:
-                print(f'current condition_item={condition_item.text()} allowed={allowed_item.text()}')
+                # print(f'current condition_item={condition_item.text()} allowed={allowed_item.text()}')
                 condition_allowed[condition_item.text()] = allowed_item.text()
         return condition_allowed
     
@@ -269,10 +277,11 @@ class MyTableView(QTableView):
             # 检查 item 是否为 None
             if condition_item and allowed_item:
                 condition_text = condition_item.text()
-                if condition_text.lower() in conditions_allowed:
-                    value = conditions_allowed[condition_text.lower()]
+                if condition_text in conditions_allowed:
+                    value = conditions_allowed[condition_text]
                     try:
                         allowed_item.setText(value)
+                        # print(f'_set_all_conditions_allowed condition_item={condition_item.text()} allowed={value}')
                     except Exception as e:
                         print(f"更新允许状态时出现错误: {e} value={value}")
 

@@ -743,22 +743,8 @@ class StateMachineWidget(QWidget):
     #             return None
     #     return current_state
 
-    def trigger_transition(self, trigger, conditions=None, allowed='Yes'):
+    def trigger_transition(self, trigger):
         try:
-            def always_true(self):
-                print(f'{sys._getframe().f_code.co_name}:{sys._getframe().f_lineno} calling always_true')
-                return True
-            def always_false(self):
-                print(f'{sys._getframe().f_code.co_name}:{sys._getframe().f_lineno} calling always_false')
-                return False
-
-            if conditions is not None:
-                print(f'set Matter.{conditions} always return ({allowed})')
-                if allowed.lower() == 'yes':
-                    setattr(Matter, conditions, always_true)
-                else:
-                    setattr(Matter, conditions, always_false)
-
             # 触发状态迁移
             getattr(self.model, trigger)()
             # 重绘界面以更新当前状态显示
@@ -768,6 +754,20 @@ class StateMachineWidget(QWidget):
         except MachineError as e:
             print(f"Invalid trigger: {trigger} {e}")
 
+    def setup_conditions_allowed_slot(self, conditions, allowed):
+        def always_true(self):
+            print(f'{sys._getframe().f_code.co_name}:{sys._getframe().f_lineno} calling always_true')
+            return True
+        def always_false(self):
+            print(f'{sys._getframe().f_code.co_name}:{sys._getframe().f_lineno} calling always_false')
+            return False
+
+        if conditions is not None:
+            print(f'set Matter.{conditions} always return ({allowed})')
+            if allowed.lower() == 'yes':
+                setattr(Matter, conditions, always_true)
+            else:
+                setattr(Matter, conditions, always_false)
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -790,8 +790,13 @@ class MainWindow(QMainWindow):
 
         self.table_view_w_search = TableViewContainsSearchWidget()
         # self.table_view_w_search.setMaximumHeight(250)
+
         if self.state_machine.json_transitions is not None:
-            self.table_view_w_search.table_view.set_transitions(self.state_machine.json_transitions) 
+            self.table_view_w_search.table_view.set_transitions(self.state_machine.json_transitions)
+            for row, transition in enumerate(self.state_machine.json_transitions):
+                condition = transition['conditions']
+                self.state_machine.setup_conditions_allowed_slot(condition, 'Yes')
+
         self._load_conditions_allowed()
 
         main_widget = QWidget(self)
@@ -826,6 +831,7 @@ class MainWindow(QMainWindow):
         self.config_page.config_changed_signal.connect(self.reload_config)
 
         self.table_view_w_search.init_state_signal.connect(self.init_state_slot)
+        self.table_view_w_search.table_view.condition_allowed_changed.connect(self.state_machine.setup_conditions_allowed_slot)
 
     def _save_conditions_allowed(self):
         conditions_allow = self.table_view_w_search.table_view._get_all_conditions_allowed()
@@ -844,18 +850,27 @@ class MainWindow(QMainWindow):
     def _load_conditions_allowed(self):
         conditions_allow_filename = f'{self.state_machine.TRANSITIONS_CONFIG_FOLDER}/conditions_allow.ini'
         config = configparser.ConfigParser()
+        config.optionxform = str
         config.read(conditions_allow_filename)
-        
-        conditions_allow = dict(config['Conditions'])
-        self.table_view_w_search.table_view._set_all_conditions_allowed(conditions_allow)
+
+        if 'Conditions' in config:
+            conditions_allow = dict(config['Conditions'])
+            self.table_view_w_search.table_view._set_all_conditions_allowed(conditions_allow)
+            for condition in conditions_allow:
+                self.state_machine.setup_conditions_allowed_slot(condition, conditions_allow[condition])
+
 
     def reload_config(self):
         self._save_conditions_allowed()
 
         self.state_machine._save_state_positions()
         self.state_machine.reload_config(self.config_page.main_resource_input.text(), self.config_page.secondary_resource_input.text())
+
         if self.state_machine.json_transitions is not None:
             self.table_view_w_search.table_view.set_transitions(self.state_machine.json_transitions)
+            for row, transition in enumerate(self.state_machine.json_transitions):
+                condition = transition['conditions']
+                self.state_machine.setup_conditions_allowed_slot(condition, 'Yes')
 
         self._load_conditions_allowed()
 
@@ -865,13 +880,13 @@ class MainWindow(QMainWindow):
 
     def trigger_slot(self, row):
         if len(row) >= 5:
-            source = row[0]
+            # source = row[0]
             trigger = row[1]
-            conditions = row[2]
-            dest = row[3]
-            allowed = row[4]
+            # conditions = row[2]
+            # dest = row[3]
+            # allowed = row[4]
             # print(f'trigger_slot source={source}, trigger={trigger}, conditions={conditions}, dest={dest}, allowed={allowed}')
-            self.state_machine.trigger_transition(trigger, conditions, allowed)
+            self.state_machine.trigger_transition(trigger)
 
     def init_state_slot(self, state_name):
         self.state_machine.set_init_state(state_name)
