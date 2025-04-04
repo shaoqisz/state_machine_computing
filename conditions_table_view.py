@@ -259,13 +259,13 @@ class MySearchComboBox(QComboBox):
         self.setCurrentIndex(0)
 
     def save_history(self):
-        print(f'save_history')
+        # print(f'save_history')
         with open(self.history_file, "w", encoding="utf-8") as f:
             for item in self.history:
                 f.write(f"{item}\n")
 
     def load_history(self):
-        print(f'load_history')
+        # print(f'load_history')
         """从文件加载历史记录"""
         if os.path.exists(self.history_file):
             with open(self.history_file, "r", encoding="utf-8") as f:

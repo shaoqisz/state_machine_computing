@@ -83,6 +83,20 @@ class StateMachineWidget(QWidget):
             # print(f'json_transitions={json_transitions}')
             self._connect_states(self.json_transitions)
 
+    def save_settings(self, settings):
+        settings.setValue(f"{self.__class__.__name__}/offset_x", self.offset_x)
+        settings.setValue(f"{self.__class__.__name__}/offset_y", self.offset_y)
+        settings.setValue(f"{self.__class__.__name__}/scale_factor", self.scale_factor)
+
+    def load_settings(self, settings):
+        offset_x = settings.value(f"{self.__class__.__name__}/offset_x")
+        offset_y = settings.value(f"{self.__class__.__name__}/offset_y")
+        scale_factor = settings.value(f"{self.__class__.__name__}/scale_factor")
+        if scale_factor and offset_x and offset_y:
+            self.offset_x = float(offset_x)
+            self.offset_y = float(offset_y)
+            self.scale_factor = float(scale_factor)
+
     def _adjust_all_states(self):
         for state in self.states:
             self._adjust_parent(state)
@@ -695,6 +709,7 @@ class MainWindow(QWidget):
         layout = QVBoxLayout()
 
         self.vert_spliter = QSplitter(Qt.Vertical, self)
+        self.vert_spliter.setObjectName("vert_spliter")
 
         ################
 
@@ -727,12 +742,28 @@ class MainWindow(QWidget):
         event.accept()
 
     def save_settings(self):
+        # geometry
         self.settings.setValue("geometry", self.saveGeometry())
 
+        # splitter
+        self.settings.setValue(self.vert_spliter.objectName(), self.vert_spliter.saveState())
+
+        # child widget settings
+        self.state_machine.save_settings(self.settings)
+
     def load_settings(self):
+        # geometry
         geometry = self.settings.value("geometry")
         if geometry:
             self.restoreGeometry(geometry)
+
+        # splitter
+        splitter_state = self.settings.value(self.vert_spliter.objectName())
+        if splitter_state:
+            self.vert_spliter.restoreState(splitter_state)
+
+        # child widget settings
+        self.state_machine.load_settings(self.settings)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
