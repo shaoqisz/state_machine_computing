@@ -1,0 +1,19 @@
+[
+    {
+        "name": "CouchMgrSM",
+        "children":
+        [
+            "VertCheckStatusState",
+
+            { "name": "InitVertJogState", "on_enter": ["InitVertJogState_entry"]},
+            { "name": "VertJoggingState"}, 
+            "VertStoppingState",
+
+            "InitVertJogToPosState", 
+            "StartVertJogToPosState",
+            "VertJoggingToPosState", 
+            "VertStoppedState", 
+            "VertMotionStoppingState"
+        ]
+    }
+]

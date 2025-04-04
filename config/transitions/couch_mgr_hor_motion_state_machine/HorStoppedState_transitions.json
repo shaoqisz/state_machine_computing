@@ -1,0 +1,10 @@
+[
+    {"trigger":"COUCH_START_HOR_JOG_REQ",           "conditions":"Transition",                      "source":"CouchMgrSM_HorStoppedState", "dest":"CouchMgrSM_Init1SpeedJogState"},
+    {"trigger":"COUCH_START_HOR_JOG_REQ",           "conditions":"StoppedToInitMoveFailTrans",      "source":"CouchMgrSM_HorStoppedState", "dest":""}, 
+    {"trigger":"COUCH_START_HOR_2SPEED_JOG_REQ",    "conditions":"StoppedToInitMoveTrans",          "source":"CouchMgrSM_HorStoppedState", "dest":"CouchMgrSM_Init2SpeedJogState"},
+    {"trigger":"COUCH_START_HOR_2SPEED_JOG_REQ",    "conditions":"StoppedToInitMoveFailTrans",      "source":"CouchMgrSM_HorStoppedState", "dest":""}, 
+    {"trigger":"COUCH_GO_HOR_MOVE_REQ",             "conditions":"StoppedToInitMoveTrans",          "source":"CouchMgrSM_HorStoppedState", "dest":"CouchMgrSM_InitSeriesMoveState"}, 
+    {"trigger":"COUCH_MGR_HOR_SERIES_MOVE_REQ",     "conditions":"Transition",                      "source":"CouchMgrSM_HorStoppedState", "dest":"CouchMgrSM_InitSeriesMoveState"}, 
+    {"trigger":"COUCH_GO_HOR_MOVE_REQ",             "conditions":"StoppedToInitMoveFailTrans",      "source":"CouchMgrSM_HorStoppedState", "dest":""}, 
+    {"trigger":"COUCH_HOR_JOG_TO_POS_REQ",          "conditions":"StoppedToInitMoveTrans",          "source":"CouchMgrSM_HorStoppedState", "dest":"CouchMgrSM_InitJogToPosState"}
+]

@@ -1,0 +1,7 @@
+[
+    {"trigger":"COUCH_REPORT_VERT_POS_BKST",    "conditions":"VertChkToStoppedTrans",        "source":"CouchMgrSM_VertCheckStatusState", "dest":"CouchMgrSM_VertStoppedState"}, 
+    {"trigger":"COUCH_MGR_VERT_STOP_TIMEOUT",   "conditions":"VertChkToStoppedTimeoutTrans", "source":"CouchMgrSM_VertCheckStatusState", "dest":"CouchMgrSM_VertStoppedState"},
+    {"trigger":"COUCH_STOP_VERT_REQ",           "conditions":"InternalTransition",           "source":"CouchMgrSM_VertCheckStatusState", "dest":""}, 
+    {"trigger":"COUCH_STOP_VERT_JOG_REQ",       "conditions":"InternalTransition",           "source":"CouchMgrSM_VertCheckStatusState", "dest":""}, 
+    {"trigger":"COUCH_STOP_MOTIONS_BKST",       "conditions":"InternalTransition",           "source":"CouchMgrSM_VertCheckStatusState", "dest":""}
+]

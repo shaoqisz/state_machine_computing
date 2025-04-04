@@ -1,0 +1,25 @@
+[
+    {
+        "name": "CouchMgrSM",
+        "children":
+        [
+            "HorCheckStatusState",      
+            "HorStoppingState",         
+
+            "InitSeriesMoveState",      
+            "SeriesMovingState",        
+            "SeriesMoveState",          
+
+            "Init1SpeedJogState",       
+            "Init2SpeedJogState",       
+            "HorJoggingState",          
+
+            "InitJogToPosState",  
+            "StartJogToPosState",       
+            "JoggingToPosState",        
+
+            "HorStoppedState",          
+            "HorMotionStoppingState"
+        ]
+    }
+]

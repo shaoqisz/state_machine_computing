@@ -1,0 +1,14 @@
+[
+    {"trigger":"COUCH_START_VERT_JOG_REQ",      "conditions":"UnexpectedTransVert",        "source":"CouchMgrSM", "dest":"CouchMgrSM_VertStoppedState"}, 
+    {"trigger":"VMC_ONE_SPEED_JOG_ANS",         "conditions":"UnexpectedTransVert",        "source":"CouchMgrSM", "dest":"CouchMgrSM_VertStoppedState"}, 
+    {"trigger":"COUCH_STOP_VERT_REQ",           "conditions":"UnexpectedVertStopTrans",    "source":"CouchMgrSM", "dest":"CouchMgrSM_VertStoppingState"}, 
+    {"trigger":"COUCH_STOP_VERT_JOG_REQ",       "conditions":"UnexpectedVertStopTrans",    "source":"CouchMgrSM", "dest":"CouchMgrSM_VertStoppingState"}, 
+    {"trigger":"COUCH_STOP_MOTIONS_BKST",       "conditions":"UnexpectedVertStopTrans",    "source":"CouchMgrSM", "dest":"CouchMgrSM_VertStoppingState"}, 
+    {"trigger":"COUCH_SERVICE_SWITCH_ON_BKST",  "conditions":"UnexpectedVertStopTrans",    "source":"CouchMgrSM", "dest":"CouchMgrSM_VertStoppingState"}, 
+    {"trigger":"COUCH_ESTOP_OPENED_BKST",       "conditions":"VertEStopOpenTrans",         "source":"CouchMgrSM", "dest":"CouchMgrSM_VertStoppingState"}, 
+    {"trigger":"COUCH_REPORT_VERT_POS_BKST",    "conditions":"VertJogReportIntTrans",      "source":"CouchMgrSM", "dest":""}, 
+    {"trigger":"COUCH_PET_VERT_JOG_TO_POS_REQ", "conditions":"UnexpectedTransVert",        "source":"CouchMgrSM", "dest":"CouchMgrSM_VertStoppingState"}, 
+    {"trigger":"VMC_PET_GO_VERT_MOVE_ANS",      "conditions":"UnexpectedTransVert",        "source":"CouchMgrSM", "dest":"CouchMgrSM_VertStoppingState"}, 
+    {"trigger":"COUCH_VERT_JOG_TO_POS_REQ",     "conditions":"UnexpectedTransVert",        "source":"CouchMgrSM", "dest":"CouchMgrSM_VertStoppingState"}, 
+    {"trigger":"CouchMgrVertWarningEventIds",   "conditions":"CouchMgrVertWarningITrans",  "source":"CouchMgrSM", "dest":""}
+]

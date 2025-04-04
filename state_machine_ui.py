@@ -74,12 +74,7 @@ class StateMachineWidget(QWidget):
 
         self._adjust_all_states()
 
-        self.model = Matter()
-        extra_args = dict(auto_transitions=False, initial='XMCMachine_XMCPowerUpSState_XMCWaitCouchTypeState', title='XMCMachine in XMCTask',
-                        show_conditions=True, show_state_attributes=True)
-        self.machine = CustomStateMachine(model=self.model, states=self.json_states, ignore_invalid_triggers=True,
-                                    transitions=self.json_transitions, 
-                                    **extra_args)
+        self.set_init_state('')
 
         if self.json_transitions is not None:
             # print(f'json_transitions={json_transitions}')
@@ -105,16 +100,21 @@ class StateMachineWidget(QWidget):
 
         self._adjust_all_states()
 
-        self.model = Matter()
-        extra_args = dict(auto_transitions=False, initial='XMCMachine_XMCPowerUpSState_XMCWaitCouchTypeState', title='XMCMachine in XMCTask',
-                        show_conditions=True, show_state_attributes=True)
-        self.machine = CustomStateMachine(model=self.model, states=self.json_states, ignore_invalid_triggers=True,
-                                    transitions=self.json_transitions, 
-                                    **extra_args)
+        self.set_init_state('')
 
         if self.json_transitions is not None:
             # print(f'json_transitions={json_transitions}')
             self._connect_states(self.json_transitions)
+
+    def set_init_state(self, state_name):
+        self.model = Matter()
+        extra_args = dict(auto_transitions=False, initial=state_name, show_conditions=True, show_state_attributes=True)
+        self.machine = CustomStateMachine(model=self.model, 
+                                          states=self.json_states, 
+                                          ignore_invalid_triggers=True, 
+                                          transitions=self.json_transitions, 
+                                          **extra_args)
+        self.update()
 
     def save_settings(self, settings):
         settings.setValue(f"{self.__class__.__name__}/offset_x", self.offset_x)
@@ -822,9 +822,12 @@ class MainWindow(QMainWindow):
         self.table_view_w_search.trigger_signal.connect(self.trigger_slot)
         self.config_page.config_changed_signal.connect(self.reload_config)
 
+        self.table_view_w_search.init_state_signal.connect(self.init_state_slot)
+
     def reload_config(self):
         self.state_machine.reload_config(self.config_page.main_resource_input.text(), self.config_page.secondary_resource_input.text())
-        self.table_view_w_search.table_view.set_transitions(self.state_machine.json_transitions)
+        if self.state_machine.json_transitions is not None:
+            self.table_view_w_search.table_view.set_transitions(self.state_machine.json_transitions)
 
     def open_config_page(self):
         self.config_page.show()
@@ -838,6 +841,9 @@ class MainWindow(QMainWindow):
             allowed = row[4]
             # print(f'trigger_slot source={source}, trigger={trigger}, conditions={conditions}, dest={dest}, allowed={allowed}')
             self.state_machine.trigger_transition(trigger, conditions, allowed)
+
+    def init_state_slot(self, state_name):
+        self.state_machine.set_init_state(state_name)
 
     def closeEvent(self, event):
         self.state_machine._save_state_positions()
