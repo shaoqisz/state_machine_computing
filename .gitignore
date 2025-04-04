@@ -1,0 +1,5 @@
+.vscode/
+__pycache__
+search_history.txt
+config.json
+states_position_config.json
