@@ -341,35 +341,35 @@ class StateMachineWidget(QWidget):
 
                 painter.drawPolygon(QPointF(end_x, end_y), QPointF(arrow_x1, arrow_y1), QPointF(arrow_x2, arrow_y2))
 
-
     def wheelEvent(self, event):
-        mouse_pos = event.pos()
-        delta = event.angleDelta().y()
+        # 获取鼠标当前位置
+        mouse_x = event.x()
+        mouse_y = event.y()
 
-        if delta > 0:
-            new_scale = self.scale_factor * 1.1
+        # 计算缩放因子
+        scale_step = 1.1
+        if event.angleDelta().y() > 0:
+            new_scale = self.scale_factor * scale_step
         else:
-            new_scale = self.scale_factor / 1.1
+            new_scale = self.scale_factor / scale_step
 
+        # 限制缩放范围
         new_scale = max(self.min_scale, min(new_scale, self.max_scale))
 
-        # 计算缩放前的逻辑坐标
-        logical_x = (mouse_pos.x() - self.offset_x) / self.scale_factor
-        logical_y = (mouse_pos.y() - self.offset_y) / self.scale_factor
+        # 计算缩放前后鼠标位置对应的逻辑坐标
+        old_logical_x = (mouse_x - self.offset_x) / self.scale_factor
+        old_logical_y = (mouse_y - self.offset_y) / self.scale_factor
 
+        # 计算新的偏移量，确保鼠标位置在缩放后保持不变
+        new_offset_x = mouse_x - old_logical_x * new_scale
+        new_offset_y = mouse_y - old_logical_y * new_scale
+
+        # 更新缩放因子和偏移量
         self.scale_factor = new_scale
+        self.offset_x = new_offset_x
+        self.offset_y = new_offset_y
 
-        # 计算新的屏幕坐标
-        new_screen_x = logical_x * self.scale_factor + self.offset_x
-        new_screen_y = logical_y * self.scale_factor + self.offset_y
-
-        # 计算平移量，使鼠标位置不变
-        dx = new_screen_x - mouse_pos.x()
-        dy = new_screen_y - mouse_pos.y()
-
-        self.offset_x += dx
-        self.offset_y += dy
-
+        # 重绘界面
         self.update()
 
     def mousePressEvent(self, event):
