@@ -260,6 +260,21 @@ class MyTableView(QTableView):
                 print(f'current condition_item={condition_item.text()} allowed={allowed_item.text()}')
                 condition_allowed[condition_item.text()] = allowed_item.text()
         return condition_allowed
+    
+    def _set_all_conditions_allowed(self, conditions_allowed):
+        for row in range(self.table_model.rowCount()):
+            condition_item = self.table_model.item(row, 2)
+            allowed_item = self.table_model.item(row, 4)
+
+            # 检查 item 是否为 None
+            if condition_item and allowed_item:
+                condition_text = condition_item.text()
+                if condition_text.lower() in conditions_allowed:
+                    value = conditions_allowed[condition_text.lower()]
+                    try:
+                        allowed_item.setText(value)
+                    except Exception as e:
+                        print(f"更新允许状态时出现错误: {e} value={value}")
 
 class MySearchComboBox(QComboBox):
     def __init__(self, parent=None):

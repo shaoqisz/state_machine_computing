@@ -792,6 +792,7 @@ class MainWindow(QMainWindow):
         # self.table_view_w_search.setMaximumHeight(250)
         if self.state_machine.json_transitions is not None:
             self.table_view_w_search.table_view.set_transitions(self.state_machine.json_transitions) 
+        self._load_conditions_allowed()
 
         main_widget = QWidget(self)
         main_widget.setLayout(QVBoxLayout())
@@ -831,16 +832,22 @@ class MainWindow(QMainWindow):
         if conditions_allow is not None:
             
             config_name_conditions_allow = dict()
-            config_name_conditions_allow[self.config_page.config_name_combobox.currentText()] = conditions_allow
+            config_name_conditions_allow['Conditions'] = conditions_allow
 
             conditions_allow_filename = f'{self.state_machine.TRANSITIONS_CONFIG_FOLDER}/conditions_allow.ini'
             config = configparser.ConfigParser()
+            config.optionxform = str
             config.read_dict(config_name_conditions_allow)
             with open(conditions_allow_filename, 'w') as f:
                 config.write(f)
 
     def _load_conditions_allowed(self):
-        ...
+        conditions_allow_filename = f'{self.state_machine.TRANSITIONS_CONFIG_FOLDER}/conditions_allow.ini'
+        config = configparser.ConfigParser()
+        config.read(conditions_allow_filename)
+        
+        conditions_allow = dict(config['Conditions'])
+        self.table_view_w_search.table_view._set_all_conditions_allowed(conditions_allow)
 
     def reload_config(self):
         self._save_conditions_allowed()
@@ -849,6 +856,8 @@ class MainWindow(QMainWindow):
         self.state_machine.reload_config(self.config_page.main_resource_input.text(), self.config_page.secondary_resource_input.text())
         if self.state_machine.json_transitions is not None:
             self.table_view_w_search.table_view.set_transitions(self.state_machine.json_transitions)
+
+        self._load_conditions_allowed()
 
     def open_config_page(self):
         self.config_page.show()

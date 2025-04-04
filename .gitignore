@@ -3,3 +3,4 @@ __pycache__
 search_history.txt
 config.json
 *_position.json
+conditions_allow.ini
