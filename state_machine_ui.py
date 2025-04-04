@@ -2,15 +2,16 @@ import sys, os
 import json
 import math
 
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QComboBox, QPushButton, QHBoxLayout, QSizePolicy, QSplitter, QMenu
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QComboBox, QPushButton, QHBoxLayout, QSizePolicy, QSplitter, QMenu, QMainWindow
 from PyQt5.QtGui import QPainter, QColor, QPen, QPolygonF, QPainterPath, QFont, QIcon
 from PyQt5.QtCore import Qt, QSettings, QPointF
 from transitions.core import MachineError
 
 from state_machine_core import Matter, CustomStateMachine
 
-
 from conditions_table_view import TableViewContainsSearchWidget
+
+from config_page import ConfigPage
 
 
 # 定义不同层级的拖动锚点颜色
@@ -25,9 +26,7 @@ LEVEL_COLORS = [
 
 STATES_CONFIG = './config/states/states_config.json'
 STATES_POSITION_CONFIG = './config/states/states_position_config.json'
-TRANSITIONS_CONFIG = './config/transitions/transitions_config.json'
 TRANSITIONS_CONFIG_FOLDER = './config/transitions/pmc'
-
 
 # with open(f'dump_{STATES_CONFIG}', 'w') as f:
 #     json.dump(defalut_json_states, f, indent=4, ensure_ascii=False)
@@ -731,7 +730,7 @@ class StateMachineWidget(QWidget):
             print(f"Invalid trigger: {trigger} {e}")
 
 
-class MainWindow(QWidget):
+class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
@@ -750,7 +749,8 @@ class MainWindow(QWidget):
         # self.table_view_w_search.setMaximumHeight(250)
         self.table_view_w_search.table_view.add_transitions(self.state_machine.json_transitions) 
 
-        layout = QVBoxLayout()
+        main_widget = QWidget(self)
+        main_widget.setLayout(QVBoxLayout())
 
         self.vert_spliter = QSplitter(Qt.Vertical, self)
         self.vert_spliter.setObjectName("vert_spliter")
@@ -761,13 +761,26 @@ class MainWindow(QWidget):
         self.vert_spliter.addWidget(widget)
         self.vert_spliter.addWidget(self.table_view_w_search)
 
-        layout.addWidget(self.vert_spliter)
+        main_widget.layout().addWidget(self.vert_spliter)
 
-        self.setLayout(layout)
+        self.setCentralWidget(main_widget)
+
+        ##############
+
+        self.config_page = ConfigPage(icon=self.windowIcon())
+
+        menubar = self.menuBar()
+        settings_menu = QMenu("Edit", self)
+        settings_action = settings_menu.addAction("Open Config Page")
+        settings_action.triggered.connect(self.open_config_page)
+        menubar.addMenu(settings_menu)
 
         self.load_settings()
 
         self.table_view_w_search.trigger_signal.connect(self.trigger_slot)
+
+    def open_config_page(self):
+        self.config_page.show()
 
     def trigger_slot(self, row):
         if len(row) >= 5:
