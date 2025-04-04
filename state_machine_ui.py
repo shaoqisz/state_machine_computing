@@ -155,28 +155,35 @@ class StateMachineWidget(QWidget):
         self._draw_transitions(painter)
 
     def _draw_state(self, painter : QPainter, state):
+        # 名字锚点
         x, y, w, h = state.rect
+        anchor_width = (len(state.name) + 5) * 8 * self.scale_factor
+        anchor_x = x + 10
+        anchor_y = y + 10
+        anchor_height = 20*self.scale_factor
+        anchor_x, anchor_y, anchor_width, anchor_height = [round(anchor_x), round(anchor_y), round(anchor_width), round(anchor_height)]
+        state.name_rect = [anchor_x, anchor_y, anchor_width, anchor_height]
+
+        # # 重新调整矩形大小
+        # w = anchor_width + 20
+        # state.rect = (x, y, w, h)
+
+        # if state.children is None or len(state.children) == 0:
+        #     h = anchor_height + 20
+        #     state.rect = (x, y, w, h)
+
+        # 绘制状态矩形
         painter.setPen(QPen(QColor(0, 0, 0), 2))
         if self.model.state == self.get_full_path(state):
             painter.setBrush(Qt.GlobalColor.yellow)
         else:
             painter.setBrush(QColor(200, 200, 200))
-
         painter.drawRoundedRect(round(x), round(y), round(w), round(h), 10, 10)
-
-        # 绘制拖动锚点
-        anchor_width = len(state.name) * 8 + 10
-        anchor_x = x + 10
-        anchor_y = y + 10
-        anchor_height = 20
         
+        # 绘制名字矩形
         color_index = min(state.level, len(LEVEL_COLORS) - 1)
         state.color = LEVEL_COLORS[color_index]
         painter.setBrush(LEVEL_COLORS[color_index])
-
-        anchor_x, anchor_y, anchor_width, anchor_height = [round(anchor_x), round(anchor_y), round(anchor_width), round(anchor_height)]
-
-        state.name_rect = [anchor_x, anchor_y, anchor_width,anchor_height]
         painter.drawRect(*state.name_rect)
 
         # 绘制状态名
@@ -186,7 +193,6 @@ class StateMachineWidget(QWidget):
         # 递归绘制子状态
         for child in state.children:
             self._draw_state(painter, child)
-
 
     def draw_curve(self, painter, color, start_x, start_y, end_x, end_y):
         # painter_2 = QPainter(self)
@@ -271,9 +277,11 @@ class StateMachineWidget(QWidget):
                     end_x = dest_center_x
                     end_y = dest_y + dest_h + margin
 
+            painter.setBrush(Qt.NoBrush)  # 设置不使用画刷填充
+
             if (source_x, source_y) == (dest_x, dest_y):
                 # 起点和终点相同，绘制自环（圆弧）
-                radius = 20  # 圆弧半径
+                radius = 30  # 圆弧半径
                 arc_center_x = start_x + radius
                 arc_center_y = start_y
                 start_angle = 180 * 16  # 起始角度，16 是 Qt 角度的缩放因子
@@ -296,7 +304,7 @@ class StateMachineWidget(QWidget):
                 painter.drawText(int(text_x), int(text_y), triggers)
 
                 # 绘制箭头
-                arrow_size = 10
+                arrow_size = 20
                 end_angle = (start_angle + span_angle) / 16
                 arrow_x = arc_center_x + radius * math.cos(math.radians(end_angle))
                 arrow_y = arc_center_y + radius * math.sin(math.radians(end_angle))
@@ -305,8 +313,9 @@ class StateMachineWidget(QWidget):
                 arrow_y1 = arrow_y - arrow_size * math.sin(arrow_angle - math.pi / 6)
                 arrow_x2 = arrow_x - arrow_size * math.cos(arrow_angle + math.pi / 6)
                 arrow_y2 = arrow_y - arrow_size * math.sin(arrow_angle + math.pi / 6)
-                painter.setBrush(source.color)
-                painter.setPen(QPen(source.color, 1))
+                # painter.setBrush(Qt.NoBrush)  # 设置不使用画刷填充
+                painter.setBrush(Qt.GlobalColor.red)
+                # painter.setPen(QPen(Qt.GlobalColor.red, 2))
                 painter.drawPolygon(QPointF(arrow_x, arrow_y), QPointF(arrow_x1, arrow_y1), QPointF(arrow_x2, arrow_y2))
             else:
                 # 起点和终点不同，绘制贝塞尔曲线
@@ -326,7 +335,6 @@ class StateMachineWidget(QWidget):
                 pen.setCapStyle(Qt.PenCapStyle.RoundCap)
                 pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
                 painter.setPen(pen)
-                painter.setBrush(Qt.NoBrush)  # 设置不使用画刷填充
                 painter.drawPath(path)
 
                 # 计算曲线中点的位置
@@ -338,16 +346,17 @@ class StateMachineWidget(QWidget):
                 painter.drawText(int(mid_x), int(mid_y - 15), triggers)
 
                 # 绘制箭头（使用三角形表示方向）
-                arrow_size = 18
-                angle = math.atan2(end_y - start_y, end_x - start_x)
+                arrow_size = 25
+                # 以最后的曲线斜率为箭头的方向
+                angle = math.atan2(path.pointAtPercent(1.0).y() - path.pointAtPercent(0.9).y(), path.pointAtPercent(1.0).x() - path.pointAtPercent(0.9).x())
+
                 arrow_x1 = end_x - arrow_size * math.cos(angle - math.pi / 6)
                 arrow_y1 = end_y - arrow_size * math.sin(angle - math.pi / 6)
                 arrow_x2 = end_x - arrow_size * math.cos(angle + math.pi / 6)
                 arrow_y2 = end_y - arrow_size * math.sin(angle + math.pi / 6)
-
-                painter.setBrush(dest.color)
-                painter.setPen(QPen(dest.color, 1))
-
+                # painter.setBrush(Qt.NoBrush)  # 设置不使用画刷填充
+                painter.setBrush(Qt.GlobalColor.red)
+                # painter.setPen(QPen(Qt.GlobalColor.red, 2))
                 painter.drawPolygon(QPointF(end_x, end_y), QPointF(arrow_x1, arrow_y1), QPointF(arrow_x2, arrow_y2))
 
     def wheelEvent(self, event):
@@ -385,11 +394,8 @@ class StateMachineWidget(QWidget):
         if event.button() == Qt.LeftButton:
             # 从后往前遍历状态列表
             for state in reversed(self.states):
-                x, y, w, h = state.rect
-                anchor_x = x + 10
-                anchor_y = y + 10
-                anchor_width = len(state.name) * 8 + 10
-                anchor_height = 20
+                
+                [anchor_x, anchor_y, anchor_width, anchor_height] = state.name_rect
 
                 # 转换为屏幕坐标
                 screen_anchor_x = anchor_x * self.scale_factor + self.offset_x
