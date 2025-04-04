@@ -92,7 +92,8 @@ class StateMachineWidget(QWidget):
         self.json_states = self._load_states()
         self.json_transitions = self._load_transitions()
 
-        self._build_states(self.json_states)
+        if self.json_states is not None:
+            self._build_states(self.json_states)
 
         self._load_state_positions()
 
