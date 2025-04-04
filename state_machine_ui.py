@@ -1,6 +1,7 @@
 import sys, os
 import json
 import math
+import configparser
 
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QComboBox, QPushButton, QHBoxLayout, QSizePolicy, QSplitter, QMenu, QMainWindow
 from PyQt5.QtGui import QPainter, QColor, QPen, QPolygonF, QPainterPath, QFont, QIcon
@@ -825,7 +826,25 @@ class MainWindow(QMainWindow):
 
         self.table_view_w_search.init_state_signal.connect(self.init_state_slot)
 
+    def _save_conditions_allowed(self):
+        conditions_allow = self.table_view_w_search.table_view._get_all_conditions_allowed()
+        if conditions_allow is not None:
+            
+            config_name_conditions_allow = dict()
+            config_name_conditions_allow[self.config_page.config_name_combobox.currentText()] = conditions_allow
+
+            conditions_allow_filename = f'{self.state_machine.TRANSITIONS_CONFIG_FOLDER}/conditions_allow.ini'
+            config = configparser.ConfigParser()
+            config.read_dict(config_name_conditions_allow)
+            with open(conditions_allow_filename, 'w') as f:
+                config.write(f)
+
+    def _load_conditions_allowed(self):
+        ...
+
     def reload_config(self):
+        self._save_conditions_allowed()
+
         self.state_machine._save_state_positions()
         self.state_machine.reload_config(self.config_page.main_resource_input.text(), self.config_page.secondary_resource_input.text())
         if self.state_machine.json_transitions is not None:
@@ -849,6 +868,8 @@ class MainWindow(QMainWindow):
         self.state_machine.set_init_state(state_name)
 
     def closeEvent(self, event):
+        self._save_conditions_allowed()
+        
         self.state_machine._save_state_positions()
 
         self.save_settings()

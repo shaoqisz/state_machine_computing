@@ -134,7 +134,7 @@ class MyTableView(QTableView):
 
     def __setupTableView(self):
         self.table_model.clear()
-        database_table_header = ['Source', 'Trigger', 'Condition', 'Dest', 'Transition Allowed']
+        database_table_header = ['Source', 'Trigger', 'Condition', 'Dest', 'Condition Allowed']
         self.table_model.setHorizontalHeaderLabels(database_table_header)
 
         self.setColumnWidth(0, 500)
@@ -250,6 +250,16 @@ class MyTableView(QTableView):
     def regex_check_box_state_changed_slot(self, state):
         print(f'regex_check_box_state_changed_slot state={state}')
         self.search_regex_option = state
+
+    def _get_all_conditions_allowed(self):
+        condition_allowed = dict()
+        for row in range(self.table_model.rowCount()):
+            condition_item = self.table_model.item(row, 2)
+            allowed_item = self.table_model.item(row, 4)
+            if condition_item and condition_item:
+                print(f'current condition_item={condition_item.text()} allowed={allowed_item.text()}')
+                condition_allowed[condition_item.text()] = allowed_item.text()
+        return condition_allowed
 
 class MySearchComboBox(QComboBox):
     def __init__(self, parent=None):
