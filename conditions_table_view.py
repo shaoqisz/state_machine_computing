@@ -22,28 +22,41 @@ import threading
 
 
 class ComboBoxDelegate(QItemDelegate):
+    # 定义自定义信号，用于发出行号和新值的信息
+    value_changed = pyqtSignal(int, str)
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.items = [ 'No', 'Yes']
 
     def createEditor(self, parent, option, index):
-        print('createEditor')
+        # print('createEditor')
         editor = QComboBox(parent)
         editor.addItems(self.items)
+
+        # 连接 ComboBox 的 currentTextChanged 信号到自定义槽函数
+        editor.currentTextChanged.connect(lambda text: self.on_value_changed(index.row(), text))
+
         return editor
 
     def setEditorData(self, editor, index):
-        print('setEditorData')
+        # print('setEditorData')
         text = index.model().data(index, Qt.EditRole)
         editor.setCurrentText(text)
 
     def setModelData(self, editor, model, index):
-        print('setModelData')
+        # print('setModelData')
         model.setData(index, editor.currentText(), Qt.EditRole)
 
     def updateEditorGeometry(self, editor, option, index):
-        print('updateEditorGeometry')
+        # print('updateEditorGeometry')
         editor.setGeometry(option.rect)
+
+
+    def on_value_changed(self, row, text):
+        # 发出自定义信号，携带行号和新值
+        self.value_changed.emit(row, text)
+
 
 class RecursiveFilterProxyModel(QSortFilterProxyModel):
     def filterAcceptsRow(self, source_row: int, source_parent: QModelIndex) -> bool:
@@ -142,6 +155,21 @@ class MyTableView(QTableView):
 
         delegate = ComboBoxDelegate(self)
         self.setItemDelegateForColumn(4, delegate)
+        # 连接自定义信号到槽函数
+        delegate.value_changed.connect(self.on_delegate_value_changed)
+
+    def on_delegate_value_changed(self, row, text):
+        proxy_index = self.proxy_model.index(row, 2) # condition
+        source_index = self.proxy_model.mapToSource(proxy_index)
+        if source_index.isValid():
+            condition = self.table_model.itemData(source_index)[0]
+            # print(f'condition={condition} return {text}')
+            for row in range(self.table_model.rowCount()):
+                condition_item = self.table_model.item(row, 2)
+                allowed_item = self.table_model.item(row, 4)
+                if condition_item and condition_item and condition == condition_item.text() and allowed_item.text() != text:
+                    # print(f'current condition_item={condition_item.text()} allowed={allowed_item.text()}')
+                    allowed_item.setText(text)
 
     def set_transitions(self, json_transitions):
         self.clear_data()
@@ -323,12 +351,10 @@ class TableViewContainsSearchWidget(QWidget):
         self.init_state_btn.setMaximumWidth(110)
         self.init_state_btn.setMaximumHeight(110)
 
-
         self.search_widget = QWidget()
         self.search_widget.setLayout(QGridLayout())
 
         row = 0
-
         self.search_widget.layout().addWidget(self.search_box,      row, 0)
         self.search_widget.layout().addWidget(self.trigger_btn,     row, 1)
         self.search_widget.layout().addWidget(self.regex_check_box, row, 2)

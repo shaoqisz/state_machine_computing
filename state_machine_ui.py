@@ -809,7 +809,6 @@ class MainWindow(QMainWindow):
 
         ##############
 
-
         menubar = self.menuBar()
         settings_menu = QMenu("&Edit", self)
         settings_action = settings_menu.addAction("Configure")
