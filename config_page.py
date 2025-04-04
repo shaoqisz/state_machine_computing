@@ -37,7 +37,7 @@ class ConfigPage(QWidget):
         layout.addWidget(self.main_resource_button, 0, 3)
 
         # 辅资源路径配置
-        self.secondary_resource_label = QLabel("Transitions File")
+        self.secondary_resource_label = QLabel("Transitions Directory")
         self.secondary_resource_input = QLineEdit()
         self.secondary_resource_button = QPushButton("Select Directory")
 
@@ -157,6 +157,10 @@ class ConfigPage(QWidget):
 
     def on_config_selected(self):
         self.load_config_to_ui()
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            self.hide()
 
 class MainWindow(QMainWindow):
     def __init__(self):

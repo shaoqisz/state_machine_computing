@@ -811,7 +811,7 @@ class MainWindow(QMainWindow):
 
 
         menubar = self.menuBar()
-        settings_menu = QMenu("Edit", self)
+        settings_menu = QMenu("&Edit", self)
         settings_action = settings_menu.addAction("Configure")
         settings_action.setShortcut('Ctrl+,')
 
@@ -826,12 +826,14 @@ class MainWindow(QMainWindow):
         self.table_view_w_search.init_state_signal.connect(self.init_state_slot)
 
     def reload_config(self):
+        self.state_machine._save_state_positions()
         self.state_machine.reload_config(self.config_page.main_resource_input.text(), self.config_page.secondary_resource_input.text())
         if self.state_machine.json_transitions is not None:
             self.table_view_w_search.table_view.set_transitions(self.state_machine.json_transitions)
 
     def open_config_page(self):
         self.config_page.show()
+        self.config_page.activateWindow()
 
     def trigger_slot(self, row):
         if len(row) >= 5:
