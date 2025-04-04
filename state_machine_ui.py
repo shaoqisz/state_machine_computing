@@ -3,7 +3,7 @@ import json
 import math
 
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QComboBox, QPushButton, QHBoxLayout, QSizePolicy, QSplitter
-from PyQt5.QtGui import QPainter, QColor, QPen, QPolygonF, QPainterPath
+from PyQt5.QtGui import QPainter, QColor, QPen, QPolygonF, QPainterPath, QFont
 from PyQt5.QtCore import Qt, QSettings, QPointF
 from transitions.core import MachineError
 
@@ -50,6 +50,14 @@ class StateMachineWidget(QWidget):
         super().__init__()
 
         self.is_dragging_all = False
+        self.scale_factor = 1.0
+        self.min_scale = 0.1
+        self.max_scale = 5.0
+        self.offset_x = 0.0
+        self.offset_y = 0.0
+
+        self.font = QFont()
+        self.font.setPointSize(10)
 
         self.states = []
         
@@ -117,9 +125,11 @@ class StateMachineWidget(QWidget):
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
+        painter.translate(self.offset_x, self.offset_y)
+        painter.scale(self.scale_factor, self.scale_factor)
 
-        # current_state = self.model.state
-        # print(f'current_state={current_state} {type(current_state)}')
+        self.font.setPointSizeF(10*self.scale_factor)
+        painter.setFont(self.font)
 
         # 找到根状态
         root_states = [state for state in self.states if state.parent is None]
@@ -145,26 +155,29 @@ class StateMachineWidget(QWidget):
 
         painter.drawRoundedRect(round(x), round(y), round(w), round(h), 10, 10)
 
-        # 绘制拖动锚点在左上方，根据层级选择颜色
-        anchor_width = len(state.name) * 8 + 10  # 根据名称长度调整宽度
+        # 绘制拖动锚点
+        anchor_width = len(state.name) * 8 + 10
         anchor_x = x + 10
         anchor_y = y + 10
         anchor_height = 20
-        color_index = min(state.level, len(LEVEL_COLORS) - 1)
         
+        color_index = min(state.level, len(LEVEL_COLORS) - 1)
         state.color = LEVEL_COLORS[color_index]
         painter.setBrush(LEVEL_COLORS[color_index])
-        
-        state.name_rect = [anchor_x, anchor_y, anchor_width, anchor_height]
+
+        anchor_x, anchor_y, anchor_width, anchor_height = [round(anchor_x), round(anchor_y), round(anchor_width), round(anchor_height)]
+
+        state.name_rect = [anchor_x, anchor_y, anchor_width,anchor_height]
         painter.drawRect(*state.name_rect)
 
-        # 在拖动锚点内绘制状态名
+        # 绘制状态名
         painter.setPen(QPen(QColor(255, 255, 255), 1))
         painter.drawText(anchor_x + 5, anchor_y + anchor_height // 2 + 5, state.name)
 
         # 递归绘制子状态
         for child in state.children:
             self._draw_state(painter, child)
+
 
     def draw_curve(self, painter, color, start_x, start_y, end_x, end_y):
         # painter_2 = QPainter(self)
@@ -329,162 +342,97 @@ class StateMachineWidget(QWidget):
                 painter.drawPolygon(QPointF(end_x, end_y), QPointF(arrow_x1, arrow_y1), QPointF(arrow_x2, arrow_y2))
 
 
-    # def _draw_transitions(self, painter):
+    def wheelEvent(self, event):
+        mouse_pos = event.pos()
+        delta = event.angleDelta().y()
 
-    #     merged_transitions = {}
-    #     for state in self.states:
-    #         for transition in state.outgoing_transitions:
-    #             source = state
-    #             dest = transition['dest']
-    #             key = (source, dest)
-    #             if key not in merged_transitions:
-    #                 # trigger_name = transition['trigger']
-    #                 # print(f'set key={source.name}-{dest.name} trigger={trigger_name}')
-    #                 merged_transitions[key] = {
-    #                     'source': source,
-    #                     'dest': dest,
-    #                     'triggers': [transition['trigger']]
-    #                 }
-    #             else:
-    #                 # print(f'add key={source.name}-{dest.name} trigger={trigger_name}')
-    #                 merged_transitions[key]['triggers'].append(transition['trigger'])
+        if delta > 0:
+            new_scale = self.scale_factor * 1.1
+        else:
+            new_scale = self.scale_factor / 1.1
 
-    #     margin = 5
-    #     for key, data in merged_transitions.items():
-    #         source = data['source']
-    #         dest = data['dest']
-    #         triggers = "|".join(data['triggers'])
+        new_scale = max(self.min_scale, min(new_scale, self.max_scale))
 
-    #         # 获取源状态的矩形信息和颜色
-    #         source_x, source_y, source_w, source_h = source.name_rect
+        # 计算缩放前的逻辑坐标
+        logical_x = (mouse_pos.x() - self.offset_x) / self.scale_factor
+        logical_y = (mouse_pos.y() - self.offset_y) / self.scale_factor
 
-    #         # 获取目标状态的矩形信息
-    #         # dest_state = transition['dest']
-    #         dest_x, dest_y, dest_w, dest_h = dest.name_rect
+        self.scale_factor = new_scale
 
-    #         # 计算源状态和目标状态的中心
-    #         source_center_x = source_x + source_w / 2
-    #         source_center_y = source_y + source_h / 2
-    #         dest_center_x = dest_x + dest_w / 2
-    #         dest_center_y = dest_y + dest_h / 2
+        # 计算新的屏幕坐标
+        new_screen_x = logical_x * self.scale_factor + self.offset_x
+        new_screen_y = logical_y * self.scale_factor + self.offset_y
 
-    #         # 计算连线的方向向量
-    #         dx = dest_center_x - source_center_x
-    #         dy = dest_center_y - source_center_y
+        # 计算平移量，使鼠标位置不变
+        dx = new_screen_x - mouse_pos.x()
+        dy = new_screen_y - mouse_pos.y()
 
-    #         # 计算连线从源状态矩形边缘出发并加上 margin 的起点
-    #         if abs(dx) > abs(dy):
-    #             if dx > 0:
-    #                 start_x = source_x + source_w + margin
-    #                 start_y = source_center_y
-    #             else:
-    #                 start_x = source_x - margin
-    #                 start_y = source_center_y
-    #         else:
-    #             if dy > 0:
-    #                 start_x = source_center_x
-    #                 start_y = source_y + source_h + margin
-    #             else:
-    #                 start_x = source_center_x
-    #                 start_y = source_y - margin
+        self.offset_x += dx
+        self.offset_y += dy
 
-    #         # 计算连线到达目标状态矩形边缘并加上 margin 的终点
-    #         if abs(dx) > abs(dy):
-    #             if dx > 0:
-    #                 end_x = dest_x - margin
-    #                 end_y = dest_center_y
-    #             else:
-    #                 end_x = dest_x + dest_w + margin
-    #                 end_y = dest_center_y
-    #         else:
-    #             if dy > 0:
-    #                 end_x = dest_center_x
-    #                 end_y = dest_y - margin
-    #             else:
-    #                 end_x = dest_center_x
-    #                 end_y = dest_y + dest_h + margin
-
-    #         # 计算贝塞尔曲线的控制点
-    #         control_x = (start_x + end_x) / 2
-    #         control_y1 = start_y + (end_y - start_y) * 0.2
-    #         control_y2 = start_y + (end_y - start_y) * 0.8
-
-    #         # 创建贝塞尔曲线路径
-    #         path = QPainterPath()
-    #         path.moveTo(start_x, start_y)
-    #         # 添加三次贝塞尔曲线
-    #         path.cubicTo(control_x, control_y1, control_x, control_y2, end_x, end_y)
-
-    #         # 设置画笔，绘制等粗的曲线，颜色取决于开始节点的颜色
-    #         pen = QPen(source.color, 2)
-    #         pen.setCapStyle(Qt.PenCapStyle.RoundCap)
-    #         pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
-    #         painter.setPen(pen)
-    #         painter.setBrush(Qt.NoBrush)  # 设置不使用画刷填充
-    #         painter.drawPath(path)
-
-    #         # 计算曲线中点的位置
-    #         mid_x = (start_x + end_x) / 2
-    #         mid_y = (start_y + end_y) / 2
-
-    #         # 绘制触发事件名称（在连线中间上方）
-    #         painter.setPen(QPen(QColor(0, 0, 0), 1))
-    #         painter.drawText(int(mid_x), int(mid_y - 15), triggers)
-
-    #         # # 绘制箭头（使用三角形表示方向）
-    #         arrow_size = 18
-    #         angle = math.atan2(end_y - start_y, end_x - start_x)
-    #         arrow_x1 = end_x - arrow_size * math.cos(angle - math.pi / 6)
-    #         arrow_y1 = end_y - arrow_size * math.sin(angle - math.pi / 6)
-    #         arrow_x2 = end_x - arrow_size * math.cos(angle + math.pi / 6)
-    #         arrow_y2 = end_y - arrow_size * math.sin(angle + math.pi / 6)
-
-    #         painter.setBrush(dest.color)
-    #         painter.setPen(QPen(dest.color, 1))
-
-    #         painter.drawPolygon(QPointF(end_x, end_y), QPointF(arrow_x1, arrow_y1), QPointF(arrow_x2, arrow_y2))
-
+        self.update()
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
             # 从后往前遍历状态列表
             for state in reversed(self.states):
                 x, y, w, h = state.rect
-                anchor_width = len(state.name) * 8 + 10
                 anchor_x = x + 10
                 anchor_y = y + 10
+                anchor_width = len(state.name) * 8 + 10
                 anchor_height = 20
-                if (anchor_x <= event.x() <= anchor_x + anchor_width and
-                        anchor_y <= event.y() <= anchor_y + anchor_height):
+
+                # 转换为屏幕坐标
+                screen_anchor_x = anchor_x * self.scale_factor + self.offset_x
+                screen_anchor_y = anchor_y * self.scale_factor + self.offset_y
+                screen_anchor_width = anchor_width * self.scale_factor
+                screen_anchor_height = anchor_height * self.scale_factor
+
+                if (screen_anchor_x <= event.x() <= screen_anchor_x + screen_anchor_width and
+                    screen_anchor_y <= event.y() <= screen_anchor_y + screen_anchor_height):
                     state.dragging = True
-                    state.drag_offset = (event.x() - x, event.y() - y)
+                    state.drag_start_x = event.x()
+                    state.drag_start_y = event.y()
                     break
+                
         elif event.button() == Qt.RightButton:
             self.is_dragging_all = True
             self.last_pos = event.pos()
+
 
     def mouseMoveEvent(self, event):
         if self.is_dragging_all:
             dx = event.x() - self.last_pos.x()
             dy = event.y() - self.last_pos.y()
-            for state in self.states:
-                x, y, w, h = state.rect
-                state.rect = (x + dx, y + dy, w, h)
+            self.offset_x += dx
+            self.offset_y += dy
             self.last_pos = event.pos()
             self.update()
         else:
             for state in self.states:
                 if state.dragging:
-                    dx, dy = state.drag_offset
-                    new_x = event.x() - dx
-                    new_y = event.y() - dy
+                    # 计算逻辑坐标的移动量
+                    dx_screen = event.x() - state.drag_start_x
+                    dy_screen = event.y() - state.drag_start_y
+                    dx_logical = dx_screen / self.scale_factor
+                    dy_logical = dy_screen / self.scale_factor
 
-                    dx_move = new_x - state.rect[0]
-                    dy_move = new_y - state.rect[1]
+                    # 更新状态的rect
+                    x, y, w, h = state.rect
+                    new_x = x + dx_logical
+                    new_y = y + dy_logical
+                    state.rect = (new_x, new_y, w, h)
 
-                    state.rect = (new_x, new_y, state.rect[2], state.rect[3])
-                    self._move_children(state, dx_move, dy_move)
+                    # 移动子状态
+                    self._move_children(state, dx_logical, dy_logical)
+
+                    # 调整父状态的大小
                     self._adjust_parent(state)
+
+                    # 更新拖拽起始位置
+                    state.drag_start_x = event.x()
+                    state.drag_start_y = event.y()
+
                     self.update()
 
     def _move_children(self, parent, dx, dy):
