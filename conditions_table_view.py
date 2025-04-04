@@ -8,7 +8,7 @@ import importlib
 
 # QT5
 from PyQt5 import QtWidgets, uic
-from PyQt5.QtWidgets import QMenu, QGridLayout, QApplication, QWidget, QTableView, QTableView, QRadioButton, QComboBox, QButtonGroup, QPushButton, QCheckBox, QHeaderView, QSplitter, QAction, QVBoxLayout, QMessageBox, QFileDialog, QStyledItemDelegate, QStyle, QHBoxLayout, QLabel
+from PyQt5.QtWidgets import QItemDelegate, QMenu, QGridLayout, QApplication, QWidget, QTableView, QTableView, QRadioButton, QComboBox, QButtonGroup, QPushButton, QCheckBox, QHeaderView, QSplitter, QAction, QVBoxLayout, QMessageBox, QFileDialog, QStyledItemDelegate, QStyle, QHBoxLayout, QLabel
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QCursor, QIcon, QPixmap
 from PyQt5.QtCore import Qt, pyqtSignal, QObject, QTimer, QTextStream, QFile, QIODevice, QItemSelectionModel, QThread, QSortFilterProxyModel, QModelIndex, QRegularExpression
 import csv
@@ -20,6 +20,30 @@ import time
 import six
 import threading
 
+
+class ComboBoxDelegate(QItemDelegate):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.items = [ 'No', 'Yes']
+
+    def createEditor(self, parent, option, index):
+        print('createEditor')
+        editor = QComboBox(parent)
+        editor.addItems(self.items)
+        return editor
+
+    def setEditorData(self, editor, index):
+        print('setEditorData')
+        text = index.model().data(index, Qt.EditRole)
+        editor.setCurrentText(text)
+
+    def setModelData(self, editor, model, index):
+        print('setModelData')
+        model.setData(index, editor.currentText(), Qt.EditRole)
+
+    def updateEditorGeometry(self, editor, option, index):
+        print('updateEditorGeometry')
+        editor.setGeometry(option.rect)
 
 class RecursiveFilterProxyModel(QSortFilterProxyModel):
     def filterAcceptsRow(self, source_row: int, source_parent: QModelIndex) -> bool:
@@ -97,37 +121,77 @@ class MyTableView(QTableView):
 
     def __setupTableView(self):
         self.table_model.clear()
-        database_table_header = ['Condition Name', 'Return']
+        database_table_header = ['Source', 'Trigger', 'Condition', 'Dest', 'Transition Allowed']
         self.table_model.setHorizontalHeaderLabels(database_table_header)
 
-    def add_conditions(self, conditions_ret):
-        for row, condition in enumerate(conditions_ret):
-            ret = conditions_ret[condition]
+        self.setColumnWidth(0, 500)
+        self.setColumnWidth(1, 300)
+        self.setColumnWidth(2, 300)
+        self.setColumnWidth(3, 500)
+
+        horizontal_header = self.horizontalHeader()
+
+        horizontal_header.setSectionResizeMode(0, horizontal_header.Interactive)
+        horizontal_header.setSectionResizeMode(1, horizontal_header.Interactive)
+        horizontal_header.setSectionResizeMode(2, horizontal_header.Interactive)
+        horizontal_header.setSectionResizeMode(3, horizontal_header.Interactive)
+
+        horizontal_header.setSectionResizeMode(4, horizontal_header.Stretch)
+
+        self.setSelectionBehavior(QTableView.SelectRows)
+
+        delegate = ComboBoxDelegate(self)
+        self.setItemDelegateForColumn(4, delegate)
+
+    def add_transitions(self, json_transitions):
+        for row, transition in enumerate(json_transitions):
+            source = transition['source']
+            trigger = transition['trigger']
+            conditions = transition['conditions']
+            dest = transition['dest']
+
             column = 0
-            item = QStandardItem(condition)
+            item = QStandardItem(source)
             item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
             self.table_model.setItem(row, column, item)
             
             column = column + 1
-            item = QStandardItem(str(ret))
-            item.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+            item = QStandardItem(str(trigger))
+            item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+            self.table_model.setItem(row, column, item)
+            
+            column = column + 1
+            item = QStandardItem(str(conditions))
+            item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+            self.table_model.setItem(row, column, item)
+            
+            column = column + 1
+            item = QStandardItem(str(dest))
+            item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
             self.table_model.setItem(row, column, item)
 
-        self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
-
-    def get_condition_ret(self, condition):
-        for row in range(self.table_model.rowCount()):
-            condition_item = self.table_model.item(row, 0)
-            if condition_item is not None:
-                if condition == condition_item.text():
-                    ret_item = self.table_model.item(row, 1)
-                    if ret_item is not None:
-                        ret = int(ret_item.text())
-                        print(f'name={condition_item.text()} ret={ret}')
-                        return ret
+            column = column + 1
+            item = QStandardItem(str('Yes'))
+            item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+            self.table_model.setItem(row, column, item)
+    
+    def get_selected_row(self):
+        selections = self.selectionModel()
+        selected = selections.selectedIndexes()
+        if selected:
+            # 获取代理模型中的索引
+            proxy_index = selected[0]
+            # 将代理模型中的索引转换为源模型中的索引
+            source_index = self.proxy_model.mapToSource(proxy_index)
+            row = source_index.row()
+            row_data = []
+            for column in range(self.table_model.columnCount()):
+                item = self.table_model.item(row, column)
+                if item is not None:
+                    row_data.append(item.text())
+            return row_data
         return None
-                
+
     def clear_data(self):
         self.table_model.clear()
         self.__setupTableView()
@@ -216,11 +280,13 @@ class MySearchComboBox(QComboBox):
                 self.addItems(self.history)
 
 class TableViewContainsSearchWidget(QWidget):
-    def __init__(self, parent=None, table_view=None, extra_widgets=None):
-        super().__init__()
-        self.setup_ui(table_view, extra_widgets)
+    trigger_signal = pyqtSignal(list)
 
-    def setup_ui(self, table_view, extra_widgets):
+    def __init__(self, parent=None, table_view=None):
+        super().__init__()
+        self.setup_ui(table_view)
+
+    def setup_ui(self, table_view):
         self.table_view = table_view
         if self.table_view is None:
             self.table_view = MyTableView()
@@ -235,6 +301,11 @@ class TableViewContainsSearchWidget(QWidget):
         self.regex_check_box.setMaximumWidth(80)
         self.regex_check_box.setMaximumHeight(110)
 
+        self.trigger_btn = QPushButton('Trigger')
+        self.trigger_btn.clicked.connect(self.on_trigger_clicked)
+        self.trigger_btn.setMaximumWidth(110)
+        self.trigger_btn.setMaximumHeight(110)
+
         self.save_search_btn = QPushButton('Save Keywords')
         self.save_search_btn.clicked.connect(self.search_box.on_save_text)
         self.save_search_btn.setMaximumWidth(110)
@@ -244,14 +315,11 @@ class TableViewContainsSearchWidget(QWidget):
         self.search_widget.setLayout(QGridLayout())
 
         row = 0
-        if extra_widgets is not None:
-            for column, extra_w in enumerate(extra_widgets):
-                self.search_widget.layout().addWidget(extra_w, row, column)
-            row += 1
 
         self.search_widget.layout().addWidget(self.search_box,      row, 0)
-        self.search_widget.layout().addWidget(self.save_search_btn, row, 1)
+        self.search_widget.layout().addWidget(self.trigger_btn,     row, 1)
         self.search_widget.layout().addWidget(self.regex_check_box, row, 2)
+        self.search_widget.layout().addWidget(self.save_search_btn, row, 3)
 
         self.setLayout(QVBoxLayout())
         self.layout().addWidget(self.search_widget)
@@ -259,6 +327,12 @@ class TableViewContainsSearchWidget(QWidget):
 
         self.layout().setContentsMargins(0,0,0,0)
         self.layout().setSpacing(0)
+
+    def on_trigger_clicked(self):
+        row = self.table_view.get_selected_row()
+        if row is not None:
+            self.trigger_signal.emit(row)
+            # print(f'trigger row={row}')
 
 class MainWindow(QWidget):
     def __init__(self):

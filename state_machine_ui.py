@@ -698,10 +698,22 @@ class StateMachineWidget(QWidget):
     #             return None
     #     return current_state
 
-    def trigger_transition(self, b, combobox):
-        trigger = combobox.currentText()
+    def trigger_transition(self, trigger, conditions=None, allowed='Yes'):
         try:
-            print(f'call {trigger}')
+            def always_true(self):
+                print(f'{sys._getframe().f_code.co_name}:{sys._getframe().f_lineno} calling always_true')
+                return True
+            def always_false(self):
+                print(f'{sys._getframe().f_code.co_name}:{sys._getframe().f_lineno} calling always_false')
+                return False
+
+            if conditions is not None:
+                print(f'set Matter.{conditions} always return ({allowed})')
+                if allowed.lower() == 'yes':
+                    setattr(Matter, conditions, always_true)
+                else:
+                    setattr(Matter, conditions, always_false)
+
             # 触发状态迁移
             getattr(self.model, trigger)()
             # 重绘界面以更新当前状态显示
@@ -726,31 +738,27 @@ class MainWindow(QWidget):
 
         layout.addWidget(self.state_machine)
 
-        added_triggers = set()
-        conditions_ret = dict()
-        for transition in self.state_machine.json_transitions:
-            trigger = transition['trigger']
-            condition_name = transition['conditions']
-            if trigger not in added_triggers:
-                added_triggers.add(trigger)
-                
-            if condition_name not in conditions_ret:
-                conditions_ret[condition_name] = 1
-
-        self.triggers_combobox = QComboBox()
-        self.triggers_combobox.addItems(sorted(added_triggers))
-
-        self.button = QPushButton('Trigger')
-        self.button.clicked.connect(lambda b, combobox=self.triggers_combobox : self.state_machine.trigger_transition(b, combobox))
-
-        self.table_view_w_search = TableViewContainsSearchWidget(extra_widgets=[self.triggers_combobox, self.button])
+        self.table_view_w_search = TableViewContainsSearchWidget()
         self.table_view_w_search.setMaximumHeight(250)
-        self.table_view_w_search.table_view.add_conditions(conditions_ret) 
+        self.table_view_w_search.table_view.add_transitions(self.state_machine.json_transitions) 
+
         layout.addWidget(self.table_view_w_search)
 
         self.setLayout(layout)
 
         self.load_settings()
+
+        self.table_view_w_search.trigger_signal.connect(self.trigger_slot)
+
+    def trigger_slot(self, row):
+        if len(row) >= 5:
+            source = row[0]
+            trigger = row[1]
+            conditions = row[2]
+            dest = row[3]
+            allowed = row[4]
+            # print(f'trigger_slot source={source}, trigger={trigger}, conditions={conditions}, dest={dest}, allowed={allowed}')
+            self.state_machine.trigger_transition(trigger, conditions, allowed)
 
     def closeEvent(self, event):
         self.state_machine._save_state_positions()
