@@ -151,22 +151,26 @@ class MyTableView(QTableView):
             dest = transition['dest']
 
             column = 0
-            item = QStandardItem(source)
+            item = QStandardItem('-' if len(source) == 0 else source)
+            item.setEditable(False)
             item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
             self.table_model.setItem(row, column, item)
             
             column = column + 1
-            item = QStandardItem(str(trigger))
+            item = QStandardItem('-' if len(trigger) == 0 else trigger)
+            item.setEditable(False)
             item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
             self.table_model.setItem(row, column, item)
             
             column = column + 1
-            item = QStandardItem(str(conditions))
+            item = QStandardItem('-' if len(conditions) == 0 else conditions)
+            item.setEditable(False)
             item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
             self.table_model.setItem(row, column, item)
             
             column = column + 1
-            item = QStandardItem(str(dest))
+            item = QStandardItem('-' if len(dest) == 0 else dest)
+            item.setEditable(False)
             item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
             self.table_model.setItem(row, column, item)
 

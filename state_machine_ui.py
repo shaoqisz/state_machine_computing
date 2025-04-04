@@ -3,7 +3,7 @@ import json
 import math
 
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QComboBox, QPushButton, QHBoxLayout, QSizePolicy, QSplitter
-from PyQt5.QtGui import QPainter, QColor, QPen, QPolygonF, QPainterPath, QFont
+from PyQt5.QtGui import QPainter, QColor, QPen, QPolygonF, QPainterPath, QFont, QIcon
 from PyQt5.QtCore import Qt, QSettings, QPointF
 from transitions.core import MachineError
 
@@ -691,9 +691,11 @@ class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle('State Machine Drawing')
+        app_name = 'State Machine Computing'
+        self.setWindowTitle(app_name)
         self.setGeometry(100, 100, 800, 600)
-        self.settings = QSettings("Philips", "State Machine Drawing")
+        self.setWindowIcon(QIcon('sm.png'))
+        self.settings = QSettings("Philips", app_name)
 
         widget = QWidget(self)
         widget.setStyleSheet("border: 2px solid gray; border-radius: 5px;")
