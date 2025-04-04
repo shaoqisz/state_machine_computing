@@ -139,6 +139,7 @@ class StateMachineWidget(QWidget):
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
+
         painter.translate(self.offset_x, self.offset_y)
         painter.scale(self.scale_factor, self.scale_factor)
 
@@ -152,12 +153,6 @@ class StateMachineWidget(QWidget):
 
         # 绘制转换连线
         self._draw_transitions(painter)
-
-        pen = QPen(Qt.black, 4)
-        painter.setPen(pen)
-        painter.setBrush(Qt.NoBrush)  # 设置不使用画刷填充
-        painter.drawRect(self.rect())
-        
 
     def _draw_state(self, painter : QPainter, state):
         x, y, w, h = state.rect
@@ -700,6 +695,9 @@ class MainWindow(QWidget):
         self.setGeometry(100, 100, 800, 600)
         self.settings = QSettings("Philips", "State Machine Drawing")
 
+        widget = QWidget(self)
+        widget.setStyleSheet("border: 2px solid gray; border-radius: 5px;")
+        widget.setLayout(QVBoxLayout())
         self.state_machine = StateMachineWidget()
 
         self.table_view_w_search = TableViewContainsSearchWidget()
@@ -712,8 +710,9 @@ class MainWindow(QWidget):
         self.vert_spliter.setObjectName("vert_spliter")
 
         ################
+        widget.layout().addWidget(self.state_machine)
 
-        self.vert_spliter.addWidget(self.state_machine)
+        self.vert_spliter.addWidget(widget)
         self.vert_spliter.addWidget(self.table_view_w_search)
 
         layout.addWidget(self.vert_spliter)
