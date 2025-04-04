@@ -143,7 +143,9 @@ class MyTableView(QTableView):
         delegate = ComboBoxDelegate(self)
         self.setItemDelegateForColumn(4, delegate)
 
-    def add_transitions(self, json_transitions):
+    def set_transitions(self, json_transitions):
+        self.clear_data()
+
         for row, transition in enumerate(json_transitions):
             source = transition['source']
             trigger = transition['trigger']

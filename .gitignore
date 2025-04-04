@@ -2,4 +2,4 @@
 __pycache__
 search_history.txt
 config.json
-states_position_config.json
+*_position.json

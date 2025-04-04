@@ -24,13 +24,6 @@ LEVEL_COLORS = [
     Qt.GlobalColor.darkGray,
 ]
 
-STATES_CONFIG = './config/states/states_config.json'
-STATES_POSITION_CONFIG = './config/states/states_position_config.json'
-TRANSITIONS_CONFIG_FOLDER = './config/transitions/pmc'
-
-# with open(f'dump_{STATES_CONFIG}', 'w') as f:
-#     json.dump(defalut_json_states, f, indent=4, ensure_ascii=False)
-
 class State:
     def __init__(self, name, children=None, parent=None):
         self.name = name
@@ -45,7 +38,7 @@ class State:
         self.name_rect = None
 
 class StateMachineWidget(QWidget):
-    def __init__(self):
+    def __init__(self, STATES_CONFIG, TRANSITIONS_CONFIG_FOLDER):
         super().__init__()
 
         self.is_dragging_all = False
@@ -55,7 +48,46 @@ class StateMachineWidget(QWidget):
         self.offset_x = 0.0
         self.offset_y = 0.0
 
+        # self.STATES_CONFIG = './config/states/states_config.json'
+        # self.TRANSITIONS_CONFIG_FOLDER = './config/transitions/pmc'
+
+        self.STATES_CONFIG = STATES_CONFIG # './config/states/states_config.json'
+        self.TRANSITIONS_CONFIG_FOLDER = TRANSITIONS_CONFIG_FOLDER # './config/transitions/pmc'
+
+
         self.font = QFont()
+        self.font.setPointSize(10)
+
+        self.merged_transitions = {}
+
+        self.states = []
+        
+        self.json_states = self._load_states()
+        self.json_transitions = self._load_transitions()
+
+        if self.json_states is not None:
+            self._build_states(self.json_states)
+
+        self._load_state_positions()
+
+        self._layout_states()
+
+        self._adjust_all_states()
+
+        self.model = Matter()
+        extra_args = dict(auto_transitions=False, initial='XMCMachine_XMCPowerUpSState_XMCWaitCouchTypeState', title='XMCMachine in XMCTask',
+                        show_conditions=True, show_state_attributes=True)
+        self.machine = CustomStateMachine(model=self.model, states=self.json_states, ignore_invalid_triggers=True,
+                                    transitions=self.json_transitions, 
+                                    **extra_args)
+
+        if self.json_transitions is not None:
+            # print(f'json_transitions={json_transitions}')
+            self._connect_states(self.json_transitions)
+
+    def reload_config(self, STATES_CONFIG, TRANSITIONS_CONFIG_FOLDER):
+        self.STATES_CONFIG = STATES_CONFIG
+        self.TRANSITIONS_CONFIG_FOLDER = TRANSITIONS_CONFIG_FOLDER
         self.font.setPointSize(10)
 
         self.merged_transitions = {}
@@ -556,8 +588,10 @@ class StateMachineWidget(QWidget):
                         result.append(state_data)
             return result
 
+        name_without_ext, file_extension = os.path.splitext(self.STATES_CONFIG)
+        position_config = f'{name_without_ext}_with_position{file_extension}'
         state_hierarchy = save_state_hierarchy(self._get_states_hierarchy(), [])
-        with open(STATES_POSITION_CONFIG, 'w') as f:
+        with open(position_config, 'w') as f:
             json.dump(state_hierarchy, f, indent=4, ensure_ascii=False)
 
 
@@ -568,9 +602,11 @@ class StateMachineWidget(QWidget):
                 chain.append(state.name)
                 state = state.parent
             return chain
-
         try:
-            with open(STATES_POSITION_CONFIG, 'r') as f:
+            name_without_ext, file_extension = os.path.splitext(self.STATES_CONFIG)
+            position_config = f'{name_without_ext}_with_position{file_extension}'
+
+            with open(position_config, 'r') as f:
                 state_hierarchy = json.load(f)
 
                 def load_state_hierarchy(state_list, parent_chain):
@@ -604,7 +640,7 @@ class StateMachineWidget(QWidget):
 
     def _load_states(self):
         try:
-            with open(STATES_CONFIG, 'r') as f:
+            with open(self.STATES_CONFIG, 'r') as f:
                 return json.load(f)
         except FileNotFoundError:
             return None
@@ -613,9 +649,9 @@ class StateMachineWidget(QWidget):
         merged_json = []
         try:
             # 遍历指定目录下的所有文件
-            for filename in os.listdir(TRANSITIONS_CONFIG_FOLDER):
+            for filename in os.listdir(self.TRANSITIONS_CONFIG_FOLDER):
                 if filename.endswith('.json'):
-                    file_path = os.path.join(TRANSITIONS_CONFIG_FOLDER, filename)
+                    file_path = os.path.join(self.TRANSITIONS_CONFIG_FOLDER, filename)
                     try:
                         with open(file_path, 'r') as f:
                             data = json.load(f)
@@ -740,14 +776,19 @@ class MainWindow(QMainWindow):
         self.setWindowIcon(QIcon('sm.png'))
         self.settings = QSettings("Philips", app_name)
 
+
         widget = QWidget(self)
         widget.setStyleSheet("border: 2px solid gray; border-radius: 5px;")
         widget.setLayout(QVBoxLayout())
-        self.state_machine = StateMachineWidget()
+
+        self.config_page = ConfigPage(icon=self.windowIcon())
+
+        self.state_machine = StateMachineWidget(self.config_page.main_resource_input.text(), self.config_page.secondary_resource_input.text())
 
         self.table_view_w_search = TableViewContainsSearchWidget()
         # self.table_view_w_search.setMaximumHeight(250)
-        self.table_view_w_search.table_view.add_transitions(self.state_machine.json_transitions) 
+        if self.state_machine.json_transitions is not None:
+            self.table_view_w_search.table_view.set_transitions(self.state_machine.json_transitions) 
 
         main_widget = QWidget(self)
         main_widget.setLayout(QVBoxLayout())
@@ -767,17 +808,23 @@ class MainWindow(QMainWindow):
 
         ##############
 
-        self.config_page = ConfigPage(icon=self.windowIcon())
 
         menubar = self.menuBar()
         settings_menu = QMenu("Edit", self)
-        settings_action = settings_menu.addAction("Open Config Page")
+        settings_action = settings_menu.addAction("Configure")
+        settings_action.setShortcut('Ctrl+,')
+
         settings_action.triggered.connect(self.open_config_page)
         menubar.addMenu(settings_menu)
 
         self.load_settings()
 
         self.table_view_w_search.trigger_signal.connect(self.trigger_slot)
+        self.config_page.config_changed_signal.connect(self.reload_config)
+
+    def reload_config(self):
+        self.state_machine.reload_config(self.config_page.main_resource_input.text(), self.config_page.secondary_resource_input.text())
+        self.table_view_w_search.table_view.set_transitions(self.state_machine.json_transitions)
 
     def open_config_page(self):
         self.config_page.show()
@@ -796,6 +843,8 @@ class MainWindow(QMainWindow):
         self.state_machine._save_state_positions()
 
         self.save_settings()
+
+        self.config_page.close()
 
         event.accept()
 

@@ -3,9 +3,11 @@ import json
 import os
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QLineEdit, QFileDialog, QMainWindow, QMenuBar, QMenu, QFormLayout, QGridLayout
 from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import pyqtSignal, Qt
 
 
 class ConfigPage(QWidget):
+    config_changed_signal = pyqtSignal()
     def __init__(self, icon=None):
         super().__init__()
         
@@ -16,7 +18,7 @@ class ConfigPage(QWidget):
 
     def initUI(self):
 
-        self.setWindowTitle("Config Page")
+        self.setWindowTitle("Configure")
         if self.icon is not None:
             self.setWindowIcon(self.icon)
             
@@ -32,7 +34,6 @@ class ConfigPage(QWidget):
         layout.addWidget(self.main_resource_input, 0, 2)
         layout.addWidget(self.main_resource_button, 0, 3)
 
-
         # 辅资源路径配置
         self.secondary_resource_label = QLabel("Transitions File")
         self.secondary_resource_input = QLineEdit()
@@ -43,7 +44,7 @@ class ConfigPage(QWidget):
         layout.addWidget(self.secondary_resource_button, 1, 3)
 
         # 保存按钮
-        self.save_button = QPushButton("Save")
+        self.save_button = QPushButton("Apply")
         self.save_button.clicked.connect(self.save_config)
         layout.addWidget(self.save_button, 2, 3)
 
@@ -70,6 +71,8 @@ class ConfigPage(QWidget):
         }
         with open("config.json", "w") as f:
             json.dump(config, f, indent=4)
+
+        self.config_changed_signal.emit()
 
     def load_config(self):
         if os.path.exists("config.json"):
