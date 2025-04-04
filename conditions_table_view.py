@@ -325,8 +325,11 @@ class TableViewContainsSearchWidget(QWidget):
         self.layout().addWidget(self.search_widget)
         self.layout().addWidget(self.table_view)
 
+        self.search_widget.layout().setContentsMargins(0,0,0,0)
+        self.search_widget.layout().setSpacing(5)
+
         self.layout().setContentsMargins(0,0,0,0)
-        self.layout().setSpacing(0)
+        self.layout().setSpacing(5)
 
     def on_trigger_clicked(self):
         row = self.table_view.get_selected_row()

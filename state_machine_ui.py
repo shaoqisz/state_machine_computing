@@ -2,7 +2,7 @@ import sys, os
 import json
 import math
 
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QComboBox, QPushButton, QHBoxLayout, QSizePolicy
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QComboBox, QPushButton, QHBoxLayout, QSizePolicy, QSplitter
 from PyQt5.QtGui import QPainter, QColor, QPen, QPolygonF, QPainterPath
 from PyQt5.QtCore import Qt, QSettings, QPointF
 from transitions.core import MachineError
@@ -128,6 +128,12 @@ class StateMachineWidget(QWidget):
 
         # 绘制转换连线
         self._draw_transitions(painter)
+
+        pen = QPen(Qt.black, 4)
+        painter.setPen(pen)
+        painter.setBrush(Qt.NoBrush)  # 设置不使用画刷填充
+        painter.drawRect(self.rect())
+        
 
     def _draw_state(self, painter : QPainter, state):
         x, y, w, h = state.rect
@@ -732,17 +738,22 @@ class MainWindow(QWidget):
         self.setGeometry(100, 100, 800, 600)
         self.settings = QSettings("Philips", "State Machine Drawing")
 
-        layout = QVBoxLayout()
-
         self.state_machine = StateMachineWidget()
 
-        layout.addWidget(self.state_machine)
-
         self.table_view_w_search = TableViewContainsSearchWidget()
-        self.table_view_w_search.setMaximumHeight(250)
+        # self.table_view_w_search.setMaximumHeight(250)
         self.table_view_w_search.table_view.add_transitions(self.state_machine.json_transitions) 
 
-        layout.addWidget(self.table_view_w_search)
+        layout = QVBoxLayout()
+
+        self.vert_spliter = QSplitter(Qt.Vertical, self)
+
+        ################
+
+        self.vert_spliter.addWidget(self.state_machine)
+        self.vert_spliter.addWidget(self.table_view_w_search)
+
+        layout.addWidget(self.vert_spliter)
 
         self.setLayout(layout)
 
