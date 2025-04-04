@@ -2,7 +2,7 @@ import sys, os
 import json
 import math
 
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QComboBox, QPushButton, QHBoxLayout, QSizePolicy, QSplitter
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QComboBox, QPushButton, QHBoxLayout, QSizePolicy, QSplitter, QMenu
 from PyQt5.QtGui import QPainter, QColor, QPen, QPolygonF, QPainterPath, QFont, QIcon
 from PyQt5.QtCore import Qt, QSettings, QPointF
 from transitions.core import MachineError
@@ -58,6 +58,8 @@ class StateMachineWidget(QWidget):
 
         self.font = QFont()
         self.font.setPointSize(10)
+
+        self.merged_transitions = {}
 
         self.states = []
         
@@ -164,14 +166,6 @@ class StateMachineWidget(QWidget):
         anchor_x, anchor_y, anchor_width, anchor_height = [round(anchor_x), round(anchor_y), round(anchor_width), round(anchor_height)]
         state.name_rect = [anchor_x, anchor_y, anchor_width, anchor_height]
 
-        # # 重新调整矩形大小
-        # w = anchor_width + 20
-        # state.rect = (x, y, w, h)
-
-        # if state.children is None or len(state.children) == 0:
-        #     h = anchor_height + 20
-        #     state.rect = (x, y, w, h)
-
         # 绘制状态矩形
         painter.setPen(QPen(QColor(0, 0, 0), 2))
         if self.model.state == self.get_full_path(state):
@@ -208,23 +202,8 @@ class StateMachineWidget(QWidget):
         painter.drawPath(path)
 
     def _draw_transitions(self, painter):
-        merged_transitions = {}
-        for state in self.states:
-            for transition in state.outgoing_transitions:
-                source = state
-                dest = transition['dest']
-                key = (source, dest)
-                if key not in merged_transitions:
-                    merged_transitions[key] = {
-                        'source': source,
-                        'dest': dest,
-                        'triggers': [transition['trigger']]
-                    }
-                else:
-                    merged_transitions[key]['triggers'].append(transition['trigger'])
-
         margin = 5
-        for key, data in merged_transitions.items():
+        for key, data in self.merged_transitions.items():
             source = data['source']
             dest = data['dest']
             triggers = "|".join(data['triggers'])
@@ -302,6 +281,7 @@ class StateMachineWidget(QWidget):
                 # 绘制触发事件名称
                 painter.setPen(QPen(QColor(0, 0, 0), 1))
                 painter.drawText(int(text_x), int(text_y), triggers)
+                self.merged_transitions[key]['triggers_pos'] = (text_x, text_y)
 
                 # 绘制箭头
                 arrow_size = 20
@@ -344,6 +324,7 @@ class StateMachineWidget(QWidget):
                 # 绘制触发事件名称（在连线中间上方）
                 painter.setPen(QPen(QColor(0, 0, 0), 1))
                 painter.drawText(int(mid_x), int(mid_y - 15), triggers)
+                self.merged_transitions[key]['triggers_pos'] = (mid_x, mid_y - 15)
 
                 # 绘制箭头（使用三角形表示方向）
                 arrow_size = 25
@@ -389,6 +370,56 @@ class StateMachineWidget(QWidget):
 
         # 重绘界面
         self.update()
+
+
+    def contextMenuEvent(self, event):
+        name = None
+        for state in reversed(self.states):
+            [anchor_x, anchor_y, anchor_width, anchor_height] = state.name_rect
+
+            # 转换为屏幕坐标
+            screen_anchor_x = anchor_x * self.scale_factor + self.offset_x
+            screen_anchor_y = anchor_y * self.scale_factor + self.offset_y
+            screen_anchor_width = anchor_width * self.scale_factor
+            screen_anchor_height = anchor_height * self.scale_factor
+
+            # '[   ] rect是从左上角开始的
+            if (screen_anchor_x <= event.x() <= screen_anchor_x + screen_anchor_width and
+                screen_anchor_y <= event.y() <= screen_anchor_y + screen_anchor_height):
+                name = state.name
+                break
+            
+        for key, data in self.merged_transitions.items():
+            source = data['source']
+            dest = data['dest']
+            triggers = "|".join(data['triggers'])
+            triggers_pos = data['triggers_pos']
+
+
+            # .__text__ 文字绘制方式是从左下角开始
+            screen_anchor_x = triggers_pos[0] * self.scale_factor + self.offset_x
+            screen_anchor_y = triggers_pos[1] * self.scale_factor + self.offset_y
+            screen_anchor_height = 20 * self.scale_factor
+            screen_anchor_width = (len(triggers) + 5) * 8 * self.scale_factor
+
+            if (screen_anchor_x <= event.x() <= screen_anchor_x + screen_anchor_width and
+                (screen_anchor_y - screen_anchor_height)<= event.y() <= screen_anchor_y):
+                name = triggers
+                break
+        
+        if name is None:
+            return
+    
+        menu = QMenu(self)
+        copy_action = menu.addAction("Copy")
+        copy_action.triggered.connect(lambda b, name=name: self.copy_state_name(b, name))
+
+        copy_action.setEnabled(True)
+        menu.exec_(event.globalPos())
+
+    def copy_state_name(self, b, name):
+        clipboard = QApplication.clipboard()
+        clipboard.setText(name)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -579,13 +610,6 @@ class StateMachineWidget(QWidget):
         except FileNotFoundError:
             return None
         
-    # def _load_transitions(self):
-    #     try:
-    #         with open(TRANSITIONS_CONFIG, 'r') as f:
-    #             return json.load(f)
-    #     except FileNotFoundError:
-    #         return None
-        
     def _load_transitions(self):
         merged_json = []
         try:
@@ -623,6 +647,20 @@ class StateMachineWidget(QWidget):
                     'trigger': trigger,
                     'dest': dest_state
                 })
+
+        for state in self.states:
+            for transition in state.outgoing_transitions:
+                source = state
+                dest = transition['dest']
+                key = (source, dest)
+                if key not in self.merged_transitions:
+                    self.merged_transitions[key] = {
+                        'source': source,
+                        'dest': dest,
+                        'triggers': [transition['trigger']]
+                    }
+                else:
+                    self.merged_transitions[key]['triggers'].append(transition['trigger'])
 
     def _find_state_by_name(self, name, current_states=None):
         if current_states is None:
