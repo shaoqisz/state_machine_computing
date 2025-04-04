@@ -349,9 +349,10 @@ class StateMachineWidget(QWidget):
                 painter.setPen(pen)
                 painter.drawPath(path)
 
-                # 计算曲线中点的位置
-                mid_x = (start_x + end_x) / 2
-                mid_y = (start_y + end_y) / 2
+                # 计算曲线中点的位置，让中点靠近起点
+                weight = 0.6  # 权重因子，值越接近 1，中点越靠近起点
+                mid_x = start_x * weight + end_x * (1 - weight)
+                mid_y = start_y * weight + end_y * (1 - weight)
 
                 # 绘制触发事件名称（在连线中间上方）
                 painter.setPen(QPen(QColor(0, 0, 0), 1))
