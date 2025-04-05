@@ -5,7 +5,7 @@ import configparser
 
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QComboBox, QPushButton, QHBoxLayout, QShortcut, QSizePolicy, QSplitter, QMenu, QMainWindow, QMessageBox
 from PyQt5.QtGui import QPainter, QColor, QPen, QPolygonF, QPainterPath, QFont, QIcon, QKeySequence
-from PyQt5.QtCore import Qt, QSettings, QPointF
+from PyQt5.QtCore import Qt, QSettings, QPointF, QEvent
 from transitions.core import MachineError
 
 from state_machine_core import Matter, CustomStateMachine
@@ -50,6 +50,8 @@ class StateMachineWidget(QWidget):
         self.warning_error_msg_box.setStandardButtons(QMessageBox.Ok)
         
         self.focus_state = None
+        self.focus_transition = None
+
         self.is_dragging_all = False
         self.scale_factor = 1.0
         self.min_scale = 0.1
@@ -230,9 +232,9 @@ class StateMachineWidget(QWidget):
             self.font.setBold(False)
         painter.setFont(self.font)
 
-    def set_line_style(self, painter, state):
-        if self.focus_state is state:
-            pen = QPen(Qt.GlobalColor.red, 4)
+    def set_line_style(self, painter, state, transition_key):
+        if self.focus_state is state or self.focus_transition is transition_key:
+            pen = QPen(Qt.GlobalColor.black, 4)
         else:
             pen = QPen(state.color, 2)
 
@@ -241,12 +243,24 @@ class StateMachineWidget(QWidget):
         painter.setPen(pen)
 
     def set_arrow_style(self, painter, state):
-        # painter.setPen(QPen(QColor(0, 0, 0), 1))
         if self.focus_state is state:
-            painter.setBrush(Qt.GlobalColor.red)
+            painter.setBrush(Qt.GlobalColor.transparent)
             return 18
         painter.setBrush(state.color)
         return 12
+    
+    def set_trigger_style(self, painter, state, transition_key):
+        # if self.focus_state is state:
+        #     painter.setPen(QPen(Qt.GlobalColor.red, 1))
+        # else:
+        painter.setPen(QPen(Qt.GlobalColor.black, 1))
+
+        if self.focus_transition is transition_key or self.focus_state is state:
+            self.font.setBold(True)
+        else:
+            self.font.setBold(False)
+
+        painter.setFont(self.font)
 
     def _draw_state(self, painter : QPainter, state):
         # 名字锚点
@@ -362,7 +376,9 @@ class StateMachineWidget(QWidget):
                 arc_center_y = start_y
                 start_angle = 180 * 16  # 起始角度，16 是 Qt 角度的缩放因子
                 span_angle = -180 * 16  # 跨度角度，负号表示逆时针
-                self.set_line_style(painter, source)
+                
+                self.set_line_style(painter, source, key)
+
                 painter.drawArc(int(arc_center_x - radius), int(arc_center_y - radius), int(radius * 2), int(radius * 2), start_angle, span_angle)
 
                 # 2. 绘制箭头
@@ -382,7 +398,9 @@ class StateMachineWidget(QWidget):
                 # 3. trigger - condition name
                 text_x = arc_center_x
                 text_y = arc_center_y - radius - 15  # 上移 15 像素
-                painter.setPen(QPen(QColor(0, 0, 0), 1))
+                
+                self.set_trigger_style(painter, source, key)
+
                 painter.drawText(int(text_x), int(text_y), triggers)
                 self.merged_transitions[key]['triggers_pos'] = (text_x, text_y)
             else:
@@ -404,7 +422,9 @@ class StateMachineWidget(QWidget):
                 path.moveTo(start_x, start_y)
                 # 添加三次贝塞尔曲线
                 path.cubicTo(control_x, control_y1, control_x, control_y2, end_x, end_y)
-                self.set_line_style(painter, source)
+
+                self.set_line_style(painter, source, key)
+                
                 painter.drawPath(path)
 
                 # 2. 绘制箭头
@@ -418,15 +438,12 @@ class StateMachineWidget(QWidget):
                 # painter.setBrush(Qt.NoBrush)  # 设置不使用画刷填充
                 painter.drawPolygon(QPointF(end_x, end_y), QPointF(arrow_x1, arrow_y1), QPointF(arrow_x2, arrow_y2))
 
-                # trigger and condition name
-                # weight = 0.5
-                # mid_x = start_x * weight + end_x * (1 - weight)
-                # mid_y = start_y * weight + end_y * (1 - weight)
-                # mid_x = (start_x) * weight + (end_x) * (1 - weight) + offset/2
-                # mid_y = (start_y) * weight + (end_y) * (1 - weight) + offset/2
+                # 3. trigger and condition name
                 mid_x = int(path.pointAtPercent(0.5).x())
                 mid_y = int(path.pointAtPercent(0.5).y())
-                painter.setPen(QPen(QColor(0, 0, 0), 1))
+
+                self.set_trigger_style(painter, source, key)
+
                 painter.drawText(mid_x, mid_y - 15, triggers)
                 self.merged_transitions[key]['triggers_pos'] = (mid_x, mid_y - 15)
 
@@ -465,38 +482,15 @@ class StateMachineWidget(QWidget):
 
     def contextMenuEvent(self, event):
         name = None
-        for state in reversed(self.states):
-            [anchor_x, anchor_y, anchor_width, anchor_height] = state.name_rect
 
-            # 转换为屏幕坐标
-            screen_anchor_x = anchor_x * self.scale_factor + self.offset_x
-            screen_anchor_y = anchor_y * self.scale_factor + self.offset_y
-            screen_anchor_width = anchor_width * self.scale_factor
-            screen_anchor_height = anchor_height * self.scale_factor
+        state = self.inside_the_state(event.x(), event.y())
+        if state is not None:
+            name = state.name
 
-            # '[   ] rect是从左上角开始的
-            if (screen_anchor_x <= event.x() <= screen_anchor_x + screen_anchor_width and
-                screen_anchor_y <= event.y() <= screen_anchor_y + screen_anchor_height):
-                name = state.name
-                break
-            
-        for key, data in self.merged_transitions.items():
-            source = data['source']
-            dest = data['dest']
-            triggers = "|".join(data['triggers'])
-            triggers_pos = data['triggers_pos']
-
-
-            # .__text__ 文字绘制方式是从左下角开始
-            screen_anchor_x = triggers_pos[0] * self.scale_factor + self.offset_x
-            screen_anchor_y = triggers_pos[1] * self.scale_factor + self.offset_y
-            screen_anchor_height = 20 * self.scale_factor
-            screen_anchor_width = (len(triggers) + 5) * 8 * self.scale_factor
-
-            if (screen_anchor_x <= event.x() <= screen_anchor_x + screen_anchor_width and
-                (screen_anchor_y - screen_anchor_height)<= event.y() <= screen_anchor_y):
-                name = triggers
-                break
+        transition = self.above_the_transition(event.x(), event.y())
+        if transition is not None:
+            key, triggers = transition
+            name = triggers
         
         if name is None:
             return
@@ -512,30 +506,60 @@ class StateMachineWidget(QWidget):
         clipboard = QApplication.clipboard()
         clipboard.setText(name)
 
+    def inside_the_state(self, x, y):
+        for state in reversed(self.states):
+            
+            [anchor_x, anchor_y, anchor_width, anchor_height] = state.name_rect
+
+            screen_anchor_x = anchor_x * self.scale_factor + self.offset_x
+            screen_anchor_y = anchor_y * self.scale_factor + self.offset_y
+            screen_anchor_width = anchor_width * self.scale_factor
+            screen_anchor_height = anchor_height * self.scale_factor
+
+            if (screen_anchor_x <= x <= screen_anchor_x + screen_anchor_width and
+                screen_anchor_y <= y <= screen_anchor_y + screen_anchor_height):
+                return state
+
+        return None
+    
+    def above_the_transition(self, x, y):
+        for key, data in self.merged_transitions.items():
+            source = data['source']
+            dest = data['dest']
+            triggers = "|".join(data['triggers'])
+            triggers_pos = data['triggers_pos']
+
+            # .__text__ 文字绘制方式是从左下角开始
+            screen_anchor_x = triggers_pos[0] * self.scale_factor + self.offset_x
+            screen_anchor_y = triggers_pos[1] * self.scale_factor + self.offset_y
+            screen_anchor_height = 20 * self.scale_factor
+            screen_anchor_width = (len(triggers) + 5) * 8 * self.scale_factor
+
+            if (screen_anchor_x <= x <= screen_anchor_x + screen_anchor_width and
+                (screen_anchor_y - screen_anchor_height)<= y <= screen_anchor_y):
+                return key, triggers
+
+        return None
+
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
             
             self.focus_state = None
+            self.focus_transition = None
 
-            # 从后往前遍历状态列表
-            for state in reversed(self.states):
-                
-                [anchor_x, anchor_y, anchor_width, anchor_height] = state.name_rect
+            state = self.inside_the_state(event.x(), event.y())
+            if state is not None:
+                state.dragging = True
+                self.focus_state = state
+                state.drag_start_x = event.x()
+                state.drag_start_y = event.y()
 
-                # 转换为屏幕坐标
-                screen_anchor_x = anchor_x * self.scale_factor + self.offset_x
-                screen_anchor_y = anchor_y * self.scale_factor + self.offset_y
-                screen_anchor_width = anchor_width * self.scale_factor
-                screen_anchor_height = anchor_height * self.scale_factor
+            transition = self.above_the_transition(event.x(), event.y())
+            if transition is not None:
+                transition_key, triggers = transition
+                self.focus_transition = transition_key
+                print(f'key={transition_key[0].name}, {transition_key[1].name}')
 
-                if (screen_anchor_x <= event.x() <= screen_anchor_x + screen_anchor_width and
-                    screen_anchor_y <= event.y() <= screen_anchor_y + screen_anchor_height):
-                    state.dragging = True
-                    self.focus_state = state
-                    state.drag_start_x = event.x()
-                    state.drag_start_y = event.y()
-                    break
-                
         elif event.button() == Qt.RightButton:
             self.is_dragging_all = True
             self.last_pos = event.pos()
