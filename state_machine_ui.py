@@ -881,7 +881,8 @@ class StateMachineWidget(QWidget):
             now = datetime.datetime.now()
             timestamp = now.strftime(TIMESTAMP_FORMAT)
 
-            color_func_name = f'<span style="color: turquoise;">{old_name}</span><span style="color: gold;">()</span>'
+            # color_func_name = f'<span style="color: turquoise;">{old_name}</span><span style="color: gold;">()</span>'
+            color_func_name = f'<span style="color: black;">{old_name}</span><span style="color: dark;">()</span>'
             color_return_code = None
             if return_code is True:
                 color_return_code = f'<span style="color: lime; font-weight: bold;">{return_code}</span>'
@@ -993,7 +994,7 @@ class MainWindow(QMainWindow):
         ################
         self.plain_text_edit = QPlainTextEdit()
         # self.plain_text_edit.setMinimumHeight(50)
-        self.plain_text_edit.setStyleSheet("background-color: black; color: white;")
+        # self.plain_text_edit.setStyleSheet("background-color: black; color: white;")
         # self.plain_text_edit.setStyleSheet("background-color: black;")
 
         ################
