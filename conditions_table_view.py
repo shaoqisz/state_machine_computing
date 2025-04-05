@@ -98,8 +98,6 @@ class MyTableView(QTableView):
 
         self.search_regex_option = Qt.CheckState.Unchecked
 
-        self.setStyleSheet("font-size: 12px;")
-
         self.__setupTableView()
 
     def initUI(self):

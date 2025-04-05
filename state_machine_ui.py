@@ -220,6 +220,10 @@ class StateMachineWidget(QWidget):
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
+        
+        # black background
+        # painter.setBrush(QColor(0, 0, 0))
+        # painter.drawRect(0, 0, self.width(), self.height())
 
         painter.translate(self.offset_x, self.offset_y)
         painter.scale(self.scale_factor, self.scale_factor)
@@ -288,7 +292,8 @@ class StateMachineWidget(QWidget):
         if self.model.state == self.get_full_path(state):
             painter.setBrush(Qt.GlobalColor.yellow)
         else:
-            painter.setBrush(QColor(200, 200, 200))
+            # painter.setBrush(QColor(200, 200, 200))
+            painter.setBrush(Qt.GlobalColor.white)
         painter.drawRoundedRect(round(x), round(y), round(w), round(h), 10, 10)
         
         # 绘制名字矩形
@@ -909,9 +914,9 @@ class MainWindow(QMainWindow):
         self.settings = QSettings("Philips", app_name)
 
 
-        widget = QWidget(self)
-        widget.setStyleSheet("border: 2px solid gray; border-radius: 5px;")
-        widget.setLayout(QVBoxLayout())
+        sm_border_widget = QWidget(self)
+        sm_border_widget.setStyleSheet("border: 2px solid gray; border-radius: 5px;")
+        sm_border_widget.setLayout(QVBoxLayout())
 
         self.config_page = ConfigPage(icon=self.windowIcon())
 
@@ -920,7 +925,48 @@ class MainWindow(QMainWindow):
                                                 icon=self.windowIcon())
 
         self.table_view_w_search = TableViewContainsSearchWidget()
-        # self.table_view_w_search.setMaximumHeight(250)
+        # self.table_view_w_search.table_view.setStyleSheet("""
+        #     QTableView {
+        #         background-color: black;
+        #         color: #ADD8E6;
+        #         gridline-color: gray;
+        #         font-size: 12px;
+        #     }
+        #     QHeaderView::section {
+        #         background-color: black;
+        #         color: #ADD8E6;
+        #         border: 1px solid gray;
+        #     }
+        #     QTableView::item {
+        #         background-color: black;
+        #         color: #ADD8E6;
+        #     }
+        #     QTableView::item:selected {
+        #         background-color: gray;
+        #         color: white;
+        #     }
+        #     QHeaderView::section:horizontal {
+        #         background-color: black;
+        #         color: green;
+        #         border-bottom: 1px solid gray;
+        #     }
+        #     QHeaderView::section:vertical {
+        #         background-color: black;
+        #         color: green;
+        #         border-right: 1px solid gray;
+        #     }
+        #     QTableCornerButton::section {
+        #         background-color: black;
+        #         color: #ADD8E6;
+        #         border: 1px solid gray;
+        #     }
+        # """)
+
+        self.table_view_w_search.table_view.setStyleSheet("""
+            QTableView {
+                font-size: 12px;
+            }
+        """)
 
         if self.state_machine.json_transitions is not None:
             self.table_view_w_search.set_transitions(self.config_page.config_name_combobox.currentText(), self.state_machine.json_transitions)
@@ -939,11 +985,14 @@ class MainWindow(QMainWindow):
         self.vert_spliter.setObjectName("vert_spliter")
 
         ################
-        widget.layout().addWidget(self.state_machine)
+        sm_border_widget.layout().addWidget(self.state_machine)
+        margin = 4
+        sm_border_widget.layout().setContentsMargins(margin, margin, margin, margin)
+        # sm_border_widget.layout().setSpacing(0)
 
         ################
         self.plain_text_edit = QPlainTextEdit()
-        self.plain_text_edit.setMinimumHeight(50)
+        # self.plain_text_edit.setMinimumHeight(50)
         self.plain_text_edit.setStyleSheet("background-color: black; color: white;")
         # self.plain_text_edit.setStyleSheet("background-color: black;")
 
@@ -957,8 +1006,7 @@ class MainWindow(QMainWindow):
 
         ################
 
-
-        self.vert_spliter.addWidget(widget)
+        self.vert_spliter.addWidget(sm_border_widget)
         self.vert_spliter.addWidget(self.hor_spliter)
 
         main_widget.layout().addWidget(self.vert_spliter)
@@ -1064,6 +1112,7 @@ class MainWindow(QMainWindow):
 
         # splitter
         self.settings.setValue(self.vert_spliter.objectName(), self.vert_spliter.saveState())
+        self.settings.setValue(self.hor_spliter.objectName(), self.hor_spliter.saveState())
 
         # child widget settings
         self.state_machine.save_settings(self.settings)
@@ -1078,6 +1127,10 @@ class MainWindow(QMainWindow):
         splitter_state = self.settings.value(self.vert_spliter.objectName())
         if splitter_state:
             self.vert_spliter.restoreState(splitter_state)
+
+        splitter_state = self.settings.value(self.hor_spliter.objectName())
+        if splitter_state:
+            self.hor_spliter.restoreState(splitter_state)
 
         # child widget settings
         self.state_machine.load_settings(self.settings)
