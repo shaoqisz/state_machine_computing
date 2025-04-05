@@ -3,8 +3,8 @@ import json
 import math
 import configparser
 
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QComboBox, QPushButton, QHBoxLayout, QSizePolicy, QSplitter, QMenu, QMainWindow, QMessageBox
-from PyQt5.QtGui import QPainter, QColor, QPen, QPolygonF, QPainterPath, QFont, QIcon
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QComboBox, QPushButton, QHBoxLayout, QShortcut, QSizePolicy, QSplitter, QMenu, QMainWindow, QMessageBox
+from PyQt5.QtGui import QPainter, QColor, QPen, QPolygonF, QPainterPath, QFont, QIcon, QKeySequence
 from PyQt5.QtCore import Qt, QSettings, QPointF
 from transitions.core import MachineError
 
@@ -49,6 +49,7 @@ class StateMachineWidget(QWidget):
         self.warning_error_msg_box.setIcon(QMessageBox.Warning)
         self.warning_error_msg_box.setStandardButtons(QMessageBox.Ok)
         
+        self.focus_state = None
         self.is_dragging_all = False
         self.scale_factor = 1.0
         self.min_scale = 0.1
@@ -213,7 +214,6 @@ class StateMachineWidget(QWidget):
         painter.scale(self.scale_factor, self.scale_factor)
 
         self.font.setPointSizeF(10*self.scale_factor)
-        painter.setFont(self.font)
 
         # 找到根状态
         root_states = [state for state in self.states if state.parent is None]
@@ -222,6 +222,31 @@ class StateMachineWidget(QWidget):
 
         # 绘制转换连线
         self._draw_transitions(painter)
+
+    def set_font_style(self, painter, state):
+        if self.focus_state is state:
+            self.font.setBold(True)
+        else:
+            self.font.setBold(False)
+        painter.setFont(self.font)
+
+    def set_line_style(self, painter, state):
+        if self.focus_state is state:
+            pen = QPen(Qt.GlobalColor.red, 4)
+        else:
+            pen = QPen(state.color, 2)
+
+        pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+        pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
+        painter.setPen(pen)
+
+    def set_arrow_style(self, painter, state):
+        # painter.setPen(QPen(QColor(0, 0, 0), 1))
+        if self.focus_state is state:
+            painter.setBrush(Qt.GlobalColor.red)
+            return 18
+        painter.setBrush(state.color)
+        return 12
 
     def _draw_state(self, painter : QPainter, state):
         # 名字锚点
@@ -232,6 +257,8 @@ class StateMachineWidget(QWidget):
         anchor_height = 20*self.scale_factor
         anchor_x, anchor_y, anchor_width, anchor_height = [round(anchor_x), round(anchor_y), round(anchor_width), round(anchor_height)]
         state.name_rect = [anchor_x, anchor_y, anchor_width, anchor_height]
+
+        self.set_font_style(painter, state)
 
         # 绘制状态矩形
         painter.setPen(QPen(QColor(0, 0, 0), 2))
@@ -274,6 +301,8 @@ class StateMachineWidget(QWidget):
             source = data['source']
             dest = data['dest']
             triggers = "|".join(data['triggers'])
+
+            self.set_font_style(painter, source)
 
             # 获取源状态的矩形信息和颜色
             source_x, source_y, source_w, source_h = source.name_rect
@@ -326,32 +355,18 @@ class StateMachineWidget(QWidget):
             painter.setBrush(Qt.NoBrush)  # 设置不使用画刷填充
 
             if (source_x, source_y) == (dest_x, dest_y):
-                # 起点和终点相同，绘制自环（圆弧）
+                # 1. 圆弧
                 radius = 30  # 圆弧半径
                 arc_center_x = start_x + radius
                 arc_center_y = start_y
                 start_angle = 180 * 16  # 起始角度，16 是 Qt 角度的缩放因子
                 span_angle = -180 * 16  # 跨度角度，负号表示逆时针
+                self.set_line_style(painter, source)
+                painter.drawArc(int(arc_center_x - radius), int(arc_center_y - radius), int(radius * 2), int(radius * 2), start_angle, span_angle)
 
-                # 绘制圆弧
-                pen = QPen(source.color, 2)
-                pen.setCapStyle(Qt.PenCapStyle.RoundCap)
-                pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
-                painter.setPen(pen)
-                painter.drawArc(int(arc_center_x - radius), int(arc_center_y - radius),
-                int(radius * 2), int(radius * 2), start_angle, span_angle)
+                # 2. 绘制箭头
+                arrow_size = self.set_arrow_style(painter, source)
 
-                # 计算曲线最大凸起部分（圆弧顶部）的位置
-                text_x = arc_center_x
-                text_y = arc_center_y - radius - 15  # 上移 15 像素
-
-                # 绘制触发事件名称
-                painter.setPen(QPen(QColor(0, 0, 0), 1))
-                painter.drawText(int(text_x), int(text_y), triggers)
-                self.merged_transitions[key]['triggers_pos'] = (text_x, text_y)
-
-                # 绘制箭头
-                arrow_size = 20
                 end_angle = (start_angle + span_angle) / 16
                 arrow_x = arc_center_x + radius * math.cos(math.radians(end_angle))
                 arrow_y = arc_center_y + radius * math.sin(math.radians(end_angle))
@@ -361,52 +376,47 @@ class StateMachineWidget(QWidget):
                 arrow_x2 = arrow_x - arrow_size * math.cos(arrow_angle + math.pi / 6)
                 arrow_y2 = arrow_y - arrow_size * math.sin(arrow_angle + math.pi / 6)
                 # painter.setBrush(Qt.NoBrush)  # 设置不使用画刷填充
-                painter.setBrush(Qt.GlobalColor.red)
-                # painter.setPen(QPen(Qt.GlobalColor.red, 2))
                 painter.drawPolygon(QPointF(arrow_x, arrow_y), QPointF(arrow_x1, arrow_y1), QPointF(arrow_x2, arrow_y2))
+
+                # 3. trigger - condition name
+                text_x = arc_center_x
+                text_y = arc_center_y - radius - 15  # 上移 15 像素
+                painter.setPen(QPen(QColor(0, 0, 0), 1))
+                painter.drawText(int(text_x), int(text_y), triggers)
+                self.merged_transitions[key]['triggers_pos'] = (text_x, text_y)
+
+
             else:
-                # 起点和终点不同，绘制贝塞尔曲线
-                # 计算贝塞尔曲线的控制点
+                # 1. 曲线 (贝塞尔曲线路径)
                 control_x = (start_x + end_x) / 2
                 control_y1 = start_y + (end_y - start_y) * 0.2
                 control_y2 = start_y + (end_y - start_y) * 0.8
-
-                # 创建贝塞尔曲线路径
                 path = QPainterPath()
                 path.moveTo(start_x, start_y)
                 # 添加三次贝塞尔曲线
                 path.cubicTo(control_x, control_y1, control_x, control_y2, end_x, end_y)
-
-                # 设置画笔，绘制等粗的曲线，颜色取决于开始节点的颜色
-                pen = QPen(source.color, 2)
-                pen.setCapStyle(Qt.PenCapStyle.RoundCap)
-                pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
-                painter.setPen(pen)
+                self.set_line_style(painter, source)
                 painter.drawPath(path)
 
-                # 计算曲线中点的位置，让中点靠近起点
-                weight = 0.6  # 权重因子，值越接近 1，中点越靠近起点
-                mid_x = start_x * weight + end_x * (1 - weight)
-                mid_y = start_y * weight + end_y * (1 - weight)
-
-                # 绘制触发事件名称（在连线中间上方）
-                painter.setPen(QPen(QColor(0, 0, 0), 1))
-                painter.drawText(int(mid_x), int(mid_y - 15), triggers)
-                self.merged_transitions[key]['triggers_pos'] = (mid_x, mid_y - 15)
-
-                # 绘制箭头（使用三角形表示方向）
-                arrow_size = 25
+                # 2. 绘制箭头
+                arrow_size = self.set_arrow_style(painter, source)
                 # 以最后的曲线斜率为箭头的方向
                 angle = math.atan2(path.pointAtPercent(1.0).y() - path.pointAtPercent(0.9).y(), path.pointAtPercent(1.0).x() - path.pointAtPercent(0.9).x())
-
                 arrow_x1 = end_x - arrow_size * math.cos(angle - math.pi / 6)
                 arrow_y1 = end_y - arrow_size * math.sin(angle - math.pi / 6)
                 arrow_x2 = end_x - arrow_size * math.cos(angle + math.pi / 6)
                 arrow_y2 = end_y - arrow_size * math.sin(angle + math.pi / 6)
                 # painter.setBrush(Qt.NoBrush)  # 设置不使用画刷填充
-                painter.setBrush(Qt.GlobalColor.red)
-                # painter.setPen(QPen(Qt.GlobalColor.red, 2))
                 painter.drawPolygon(QPointF(end_x, end_y), QPointF(arrow_x1, arrow_y1), QPointF(arrow_x2, arrow_y2))
+
+                # trigger and condition name
+                weight = 0.6  # 权重因子，值越接近 1，中点越靠近起点
+                mid_x = start_x * weight + end_x * (1 - weight)
+                mid_y = start_y * weight + end_y * (1 - weight)
+                painter.setPen(QPen(QColor(0, 0, 0), 1))
+                painter.drawText(int(mid_x), int(mid_y - 15), triggers)
+                self.merged_transitions[key]['triggers_pos'] = (mid_x, mid_y - 15)
+
 
     def wheelEvent(self, event):
         # 获取鼠标当前位置
@@ -491,6 +501,9 @@ class StateMachineWidget(QWidget):
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
+            
+            self.focus_state = None
+
             # 从后往前遍历状态列表
             for state in reversed(self.states):
                 
@@ -505,6 +518,7 @@ class StateMachineWidget(QWidget):
                 if (screen_anchor_x <= event.x() <= screen_anchor_x + screen_anchor_width and
                     screen_anchor_y <= event.y() <= screen_anchor_y + screen_anchor_height):
                     state.dragging = True
+                    self.focus_state = state
                     state.drag_start_x = event.x()
                     state.drag_start_y = event.y()
                     break
@@ -513,6 +527,7 @@ class StateMachineWidget(QWidget):
             self.is_dragging_all = True
             self.last_pos = event.pos()
 
+        self.update()
 
     def mouseMoveEvent(self, event):
         if self.is_dragging_all:
