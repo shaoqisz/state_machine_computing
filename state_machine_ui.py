@@ -297,6 +297,7 @@ class StateMachineWidget(QWidget):
 
     def _draw_transitions(self, painter):
         margin = 5
+        drawn_pairs = []
         for key, data in self.merged_transitions.items():
             source = data['source']
             dest = data['dest']
@@ -384,13 +385,21 @@ class StateMachineWidget(QWidget):
                 painter.setPen(QPen(QColor(0, 0, 0), 1))
                 painter.drawText(int(text_x), int(text_y), triggers)
                 self.merged_transitions[key]['triggers_pos'] = (text_x, text_y)
-
-
             else:
                 # 1. 曲线 (贝塞尔曲线路径)
-                control_x = (start_x + end_x) / 2
-                control_y1 = start_y + (end_y - start_y) * 0.2
-                control_y2 = start_y + (end_y - start_y) * 0.8
+                offset = 0
+                reverse_key = (dest, source)
+                if reverse_key in self.merged_transitions:
+                    if key in drawn_pairs or reverse_key in drawn_pairs:
+                        offset = 50
+                    else:
+                        offset = -50
+                        drawn_pairs.append(key)
+                # print(f'key={source.name, dest.name} reverse_key={dest.name, source.name} offset={offset}')
+
+                control_x = (start_x + end_x) / 2 + offset
+                control_y1 = start_y + (end_y - start_y) * 0.2 + offset
+                control_y2 = start_y + (end_y - start_y) * 0.8 + offset
                 path = QPainterPath()
                 path.moveTo(start_x, start_y)
                 # 添加三次贝塞尔曲线
@@ -410,11 +419,15 @@ class StateMachineWidget(QWidget):
                 painter.drawPolygon(QPointF(end_x, end_y), QPointF(arrow_x1, arrow_y1), QPointF(arrow_x2, arrow_y2))
 
                 # trigger and condition name
-                weight = 0.6  # 权重因子，值越接近 1，中点越靠近起点
-                mid_x = start_x * weight + end_x * (1 - weight)
-                mid_y = start_y * weight + end_y * (1 - weight)
+                # weight = 0.5
+                # mid_x = start_x * weight + end_x * (1 - weight)
+                # mid_y = start_y * weight + end_y * (1 - weight)
+                # mid_x = (start_x) * weight + (end_x) * (1 - weight) + offset/2
+                # mid_y = (start_y) * weight + (end_y) * (1 - weight) + offset/2
+                mid_x = int(path.pointAtPercent(0.5).x())
+                mid_y = int(path.pointAtPercent(0.5).y())
                 painter.setPen(QPen(QColor(0, 0, 0), 1))
-                painter.drawText(int(mid_x), int(mid_y - 15), triggers)
+                painter.drawText(mid_x, mid_y - 15, triggers)
                 self.merged_transitions[key]['triggers_pos'] = (mid_x, mid_y - 15)
 
 
@@ -583,9 +596,9 @@ class StateMachineWidget(QWidget):
 
                 # 增加一些边距
                 margin = 10
-                name_margin = 40
+                name_y_margin = 50
                 new_x = min_x - margin
-                new_y = min_y - margin - name_margin
+                new_y = min_y - margin - name_y_margin
                 new_w = max_x - new_x + margin
                 new_h = max_y - new_y + margin
 
