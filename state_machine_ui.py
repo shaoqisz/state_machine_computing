@@ -838,12 +838,12 @@ class MainWindow(QMainWindow):
         # self.table_view_w_search.setMaximumHeight(250)
 
         if self.state_machine.json_transitions is not None:
-            self.table_view_w_search.table_view.set_transitions(self.state_machine.json_transitions)
+            self.table_view_w_search.set_transitions(self.config_page.config_name_combobox.currentText(), self.state_machine.json_transitions)
             for row, transition in enumerate(self.state_machine.json_transitions):
                 condition = transition['conditions']
                 self.state_machine.setup_conditions_allowed_slot(condition, 'Yes')
         else:
-            self.table_view_w_search.table_view.clear_transitions()
+            self.table_view_w_search.clear_transitions()
 
         self._load_conditions_allowed()
 
@@ -915,12 +915,12 @@ class MainWindow(QMainWindow):
         self.state_machine.reload_config(self.config_page.main_resource_input.text(), self.config_page.secondary_resource_input.text())
 
         if self.state_machine.json_transitions is not None:
-            self.table_view_w_search.table_view.set_transitions(self.state_machine.json_transitions)
+            self.table_view_w_search.set_transitions(self.config_page.config_name_combobox.currentText(), self.state_machine.json_transitions)
             for row, transition in enumerate(self.state_machine.json_transitions):
                 condition = transition['conditions']
                 self.state_machine.setup_conditions_allowed_slot(condition, 'Yes')
         else:
-            self.table_view_w_search.table_view.clear_transitions()
+            self.table_view_w_search.clear_transitions()
 
         self._load_conditions_allowed()
 

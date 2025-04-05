@@ -8,8 +8,8 @@ import importlib
 
 # QT5
 from PyQt5 import QtWidgets, uic
-from PyQt5.QtWidgets import QItemDelegate, QMenu, QGridLayout, QApplication, QWidget, QTableView, QTableView, QRadioButton, QComboBox, QButtonGroup, QPushButton, QCheckBox, QHeaderView, QSplitter, QAction, QVBoxLayout, QMessageBox, QFileDialog, QStyledItemDelegate, QStyle, QHBoxLayout, QLabel
-from PyQt5.QtGui import QStandardItemModel, QStandardItem, QCursor, QIcon, QPixmap
+from PyQt5.QtWidgets import QItemDelegate, QMenu, QGridLayout, QApplication, QWidget, QTableView, QSizePolicy, QTableView, QFrame, QRadioButton, QComboBox, QLineEdit, QButtonGroup, QPushButton, QCheckBox, QHeaderView, QSplitter, QAction, QVBoxLayout, QMessageBox, QFileDialog, QStyledItemDelegate, QStyle, QHBoxLayout, QLabel
+from PyQt5.QtGui import QStandardItemModel, QStandardItem, QCursor, QIcon, QPixmap, QFont
 from PyQt5.QtCore import Qt, pyqtSignal, QObject, QTimer, QTextStream, QFile, QIODevice, QItemSelectionModel, QThread, QSortFilterProxyModel, QModelIndex, QRegularExpression
 import csv
 import re
@@ -213,9 +213,7 @@ class MyTableView(QTableView):
             column = column + 1
             item = QStandardItem(str('Yes'))
             item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-            self.table_model.setItem(row, column, item)
-    
-
+            self.table_model.setItem(row, column, item)            
 
     def get_selected_row(self):
         selections = self.selectionModel()
@@ -355,10 +353,35 @@ class TableViewContainsSearchWidget(QWidget):
         super().__init__()
         self.setup_ui(table_view)
 
+    def set_transitions(self, config_name, json_transitions):
+        self.config_name.setText(config_name)
+        self.table_view.set_transitions(json_transitions)
+
+    def clear_transitions(self):
+        self.config_name.setText('')
+        self.table_view.clear_transitions()
+
     def setup_ui(self, table_view):
         self.table_view = table_view
         if self.table_view is None:
             self.table_view = MyTableView()
+
+        font = QFont()
+        font.setBold(True)
+        self.config_label = QLabel('Configure:')
+        self.config_label.setFont(font)
+        policy = self.config_label.sizePolicy()
+        policy.setHorizontalPolicy(QSizePolicy.Policy.Fixed)
+        self.config_label.setSizePolicy(policy)
+
+        self.config_name = QLabel('')
+        # self.config_name.setFont(font)
+        # self.config_name.setMinimumWidth(100)
+        # self.config_name.setMaximumWidth(400)
+        policy = self.config_name.sizePolicy()
+        policy.setHorizontalPolicy(QSizePolicy.Policy.Fixed)
+        self.config_name.setSizePolicy(policy)
+        # self.config_name.setMaximumHeight(110)
 
         self.search_box = MySearchComboBox()
         self.search_box.currentTextChanged.connect(self.table_view.filter_tree_view_slot)
@@ -367,8 +390,11 @@ class TableViewContainsSearchWidget(QWidget):
         self.regex_check_box = QCheckBox('Regex')
         self.regex_check_box.setCheckState(Qt.CheckState.Unchecked)
         self.regex_check_box.stateChanged.connect(self.table_view.regex_check_box_state_changed_slot)
-        self.regex_check_box.setMaximumWidth(80)
-        self.regex_check_box.setMaximumHeight(110)
+        # self.regex_check_box.setMaximumWidth(80)
+        # self.regex_check_box.setMaximumHeight(110)
+        policy = self.regex_check_box.sizePolicy()
+        policy.setHorizontalPolicy(QSizePolicy.Policy.Fixed)
+        self.regex_check_box.setSizePolicy(policy)
 
         self.trigger_btn = QPushButton('Trigger')
         self.trigger_btn.clicked.connect(self.on_trigger_clicked)
@@ -388,12 +414,42 @@ class TableViewContainsSearchWidget(QWidget):
         self.search_widget = QWidget()
         self.search_widget.setLayout(QGridLayout())
 
+        separator1 = QFrame()
+        separator1.setFrameShape(QFrame.Shape.VLine)
+        separator1.setFrameShadow(QFrame.Shadow.Sunken)
+
+        separator2 = QFrame()
+        separator2.setFrameShape(QFrame.Shape.VLine)
+        separator2.setFrameShadow(QFrame.Shadow.Sunken)
+
         row = 0
-        self.search_widget.layout().addWidget(self.search_box,      row, 0)
-        self.search_widget.layout().addWidget(self.trigger_btn,     row, 1)
-        self.search_widget.layout().addWidget(self.regex_check_box, row, 2)
-        self.search_widget.layout().addWidget(self.save_search_btn, row, 3)
-        self.search_widget.layout().addWidget(self.init_state_btn,  row, 4)
+        column = 0
+        self.search_widget.layout().addWidget(self.config_label,     row, column)
+        column += 1
+
+        self.search_widget.layout().addWidget(self.config_name,      row, column)
+        column += 1
+
+        self.search_widget.layout().addWidget(separator1,            row, column)
+        column += 1
+
+        self.search_widget.layout().addWidget(self.search_box,      row, column)
+        column += 1
+
+        self.search_widget.layout().addWidget(self.trigger_btn,     row, column)
+        column += 1
+
+        self.search_widget.layout().addWidget(self.init_state_btn,  row, column)
+        column += 1
+
+        self.search_widget.layout().addWidget(separator2,            row, column)
+        column += 1
+
+        self.search_widget.layout().addWidget(self.regex_check_box, row, column)
+        column += 1
+
+        self.search_widget.layout().addWidget(self.save_search_btn, row, column)
+        column += 1
 
         self.setLayout(QVBoxLayout())
         self.layout().addWidget(self.search_widget)
