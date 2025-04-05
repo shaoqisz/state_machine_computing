@@ -492,19 +492,28 @@ class StateMachineWidget(QWidget):
             key, triggers = transition
             name = triggers
         
-        if name is None:
-            return
-    
-        menu = QMenu(self)
-        copy_action = menu.addAction("Copy")
-        copy_action.triggered.connect(lambda b, name=name: self.copy_state_name(b, name))
+        if name is not None or state is not None:
+            menu = QMenu(self)
 
-        copy_action.setEnabled(True)
-        menu.exec_(event.globalPos())
+            if name is not None:
+                copy_action = menu.addAction("Copy")
+                copy_action.triggered.connect(lambda b, name=name: self.copy_state_name(b, name))
+                copy_action.setEnabled(True)
+
+            if state is not None:
+                init_action = menu.addAction("Initial State")
+                init_action.triggered.connect(lambda b, name=self.get_full_path(state): self.init_state_slot(b, name))
+                init_action.setEnabled(True)
+
+            menu.exec_(event.globalPos())
 
     def copy_state_name(self, b, name):
         clipboard = QApplication.clipboard()
         clipboard.setText(name)
+
+    def init_state_slot(self, b, name):
+        print(f'set_init_state name = {name}')
+        self.set_init_state(name)
 
     def inside_the_state(self, x, y):
         for state in reversed(self.states):
@@ -931,7 +940,7 @@ class MainWindow(QMainWindow):
         self.table_view_w_search.trigger_signal.connect(self.trigger_slot)
         self.config_page.config_changed_signal.connect(self.reload_config)
 
-        self.table_view_w_search.init_state_signal.connect(self.init_state_slot)
+        # self.table_view_w_search.init_state_signal.connect(self.init_state_slot)
         self.table_view_w_search.table_view.condition_allowed_changed.connect(self.state_machine.setup_conditions_allowed_slot)
 
     def _save_conditions_allowed(self):
@@ -991,8 +1000,8 @@ class MainWindow(QMainWindow):
             # print(f'trigger_slot source={source}, trigger={trigger}, conditions={conditions}, dest={dest}, allowed={allowed}')
             self.state_machine.trigger_transition(trigger)
 
-    def init_state_slot(self, state_name):
-        self.state_machine.set_init_state(state_name)
+    # def init_state_slot(self, state_name):
+    #     self.state_machine.set_init_state(state_name)
 
     def closeEvent(self, event):
         self._save_conditions_allowed()

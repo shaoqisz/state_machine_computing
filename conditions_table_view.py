@@ -347,7 +347,7 @@ class MySearchComboBox(QComboBox):
 
 class TableViewContainsSearchWidget(QWidget):
     trigger_signal = pyqtSignal(list)
-    init_state_signal = pyqtSignal(str)
+    # init_state_signal = pyqtSignal(str)
 
     def __init__(self, parent=None, table_view=None):
         super().__init__()
@@ -406,10 +406,10 @@ class TableViewContainsSearchWidget(QWidget):
         self.save_search_btn.setMaximumWidth(110)
         self.save_search_btn.setMaximumHeight(110)
 
-        self.init_state_btn = QPushButton('Init State')
-        self.init_state_btn.clicked.connect(self.on_init_state_btn_clicked)
-        self.init_state_btn.setMaximumWidth(110)
-        self.init_state_btn.setMaximumHeight(110)
+        # self.init_state_btn = QPushButton('Init State')
+        # self.init_state_btn.clicked.connect(self.on_init_state_btn_clicked)
+        # self.init_state_btn.setMaximumWidth(110)
+        # self.init_state_btn.setMaximumHeight(110)
 
         self.search_widget = QWidget()
         self.search_widget.setLayout(QGridLayout())
@@ -439,8 +439,8 @@ class TableViewContainsSearchWidget(QWidget):
         self.search_widget.layout().addWidget(self.trigger_btn,     row, column)
         column += 1
 
-        self.search_widget.layout().addWidget(self.init_state_btn,  row, column)
-        column += 1
+        # self.search_widget.layout().addWidget(self.init_state_btn,  row, column)
+        # column += 1
 
         self.search_widget.layout().addWidget(separator2,            row, column)
         column += 1
@@ -467,10 +467,10 @@ class TableViewContainsSearchWidget(QWidget):
             self.trigger_signal.emit(row)
             # print(f'trigger row={row}')
 
-    def on_init_state_btn_clicked(self):
-        row = self.table_view.get_selected_row()
-        if row is not None:
-            self.init_state_signal.emit(row[0])
+    # def on_init_state_btn_clicked(self):
+    #     row = self.table_view.get_selected_row()
+    #     if row is not None:
+    #         self.init_state_signal.emit(row[0])
 
 class MainWindow(QWidget):
     def __init__(self):
