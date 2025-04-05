@@ -1,0 +1,4 @@
+[
+{"trigger": "MsgStateTimerBKST",  "conditions": "msmf::none",                   "source": "CouchSm_HomedJogPtpSState_MotionSState_MoveInitState",       "dest": "CouchSm_HomedJogPtpSState_MotionSState_WaitForMovingState"},
+{"trigger": "MsgStateTimerBKST",  "conditions": "WaitForMovingToMovingGuard",   "source": "CouchSm_HomedJogPtpSState_MotionSState_WaitForMovingState",  "dest": "CouchSm_HomedJogPtpSState_MotionSState_MovingState"}
+]

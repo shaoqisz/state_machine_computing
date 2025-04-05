@@ -1,0 +1,20 @@
+[
+    {"trigger": "MsgBrakeControlREQ",               "conditions": "CouchSmITrans",                      "source": "CouchSm", "dest": ""},
+    {"trigger": "MsgBrakeStatus",                   "conditions": "CouchSmITrans",                      "source": "CouchSm", "dest": ""},
+    {"trigger": "MsgInquiryBrakeStatusREQ",         "conditions": "CouchSmITrans",                      "source": "CouchSm", "dest": ""},
+    {"trigger": "MsgInquiryBrakeStatusANS",         "conditions": "CouchSmITrans",                      "source": "CouchSm", "dest": ""},
+    {"trigger": "MsgBrakePowerControl",             "conditions": "CouchSmITrans",                      "source": "CouchSm", "dest": ""},
+    {"trigger": "MsgSdoControl",                    "conditions": "CouchSmITrans",                      "source": "CouchSm", "dest": ""},
+    {"trigger": "MsgDriveParameterVersionREQ",      "conditions": "CouchSmITrans",                      "source": "CouchSm", "dest": ""},
+    {"trigger": "MsgVertMotorBrakeLifeRecordBKST",  "conditions": "CouchSmITrans",                      "source": "CouchSm", "dest": ""},
+    {"trigger": "MsgVertCaliDataBKST",              "conditions": "CouchSmITrans",                      "source": "CouchSm", "dest": ""},
+    {"trigger": "MsgHorIOLimitBKST",                "conditions": "CouchSmIOITrans",                    "source": "CouchSm", "dest": ""},
+    {"trigger": "MsgSubHorIOLimitBKST",             "conditions": "CouchSmIOITrans",                    "source": "CouchSm", "dest": ""},
+    {"trigger": "MsgVertIOLimitBKST",               "conditions": "CouchSmIOITrans",                    "source": "CouchSm", "dest": ""},
+    {"trigger": "MsgCalREQ",                        "conditions": "CouchSmITrans",                      "source": "CouchSm", "dest": ""},
+    {"trigger": "MsgPositionBKST",                  "conditions": "CouchUpdatePositionITrans",          "source": "CouchSm", "dest": ""},
+    {"trigger": "MsgPositionCurrentBKST",           "conditions": "CouchUpdatePositionCurrentITrans",   "source": "CouchSm", "dest": ""},
+    {"trigger": "MsgUpdateCtBoxBKST",               "conditions": "CouchUpdateCTBoxITrans",             "source": "CouchSm", "dest": ""},
+    {"trigger": "MsgAxisEmergencyErrorBKST",        "conditions": "CouchSmITrans",                      "source": "CouchSm", "dest": ""},
+    {"trigger": "MsgAxisFaultBKST",                 "conditions": "CouchSmITrans",                      "source": "CouchSm", "dest": ""}
+]

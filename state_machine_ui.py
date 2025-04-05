@@ -3,7 +3,7 @@ import json
 import math
 import configparser
 
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QComboBox, QPushButton, QHBoxLayout, QSizePolicy, QSplitter, QMenu, QMainWindow
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QComboBox, QPushButton, QHBoxLayout, QSizePolicy, QSplitter, QMenu, QMainWindow, QMessageBox
 from PyQt5.QtGui import QPainter, QColor, QPen, QPolygonF, QPainterPath, QFont, QIcon
 from PyQt5.QtCore import Qt, QSettings, QPointF
 from transitions.core import MachineError
@@ -39,9 +39,16 @@ class State:
         self.name_rect = None
 
 class StateMachineWidget(QWidget):
-    def __init__(self, STATES_CONFIG, TRANSITIONS_CONFIG_FOLDER):
+    def __init__(self, STATES_CONFIG, TRANSITIONS_CONFIG_FOLDER, icon=None):
         super().__init__()
 
+        self.icon = icon
+
+        self.warning_error_msg_box = QMessageBox()
+        self.warning_error_msg_box.setWindowIcon(self.icon)
+        self.warning_error_msg_box.setIcon(QMessageBox.Warning)
+        self.warning_error_msg_box.setStandardButtons(QMessageBox.Ok)
+        
         self.is_dragging_all = False
         self.scale_factor = 1.0
         self.min_scale = 0.1
@@ -75,7 +82,8 @@ class StateMachineWidget(QWidget):
 
         self._adjust_all_states()
 
-        self.set_init_state('')
+        initial_state_name = self._find_the_1st_initial_state(self.json_states)
+        self.set_init_state(initial_state_name)
 
         if self.json_transitions is not None:
             # print(f'json_transitions={json_transitions}')
@@ -102,17 +110,21 @@ class StateMachineWidget(QWidget):
 
         self._adjust_all_states()
 
-        self.set_init_state('')
+        initial_state_name = self._find_the_1st_initial_state(self.json_states)
+        self.set_init_state(initial_state_name)
 
         if self.json_transitions is not None:
             # print(f'json_transitions={json_transitions}')
             self._connect_states(self.json_transitions)
 
-    def set_init_state(self, state_name):
+    def set_init_state(self, state_name=None):
         self.model = Matter()
-        extra_args = dict(auto_transitions=False, initial=state_name, show_conditions=True, show_state_attributes=True)
-        self.machine = CustomStateMachine(model=self.model, 
-                                          states=self.json_states, 
+        extra_args = dict(auto_transitions=False, show_conditions=True, show_state_attributes=True)
+        if state_name is not None:
+            extra_args['initial'] = state_name
+
+        self.machine = CustomStateMachine(model=self.model,
+                                          states=self.json_states,
                                           ignore_invalid_triggers=True, 
                                           transitions=self.json_transitions, 
                                           **extra_args)
@@ -136,6 +148,28 @@ class StateMachineWidget(QWidget):
         for state in self.states:
             self._adjust_parent(state)
         self.update()
+
+    def _find_the_1st_initial_state(self, state_list, parent_path=None):
+        if state_list is None:
+            return None
+
+        if parent_path is None:
+            parent_path = []
+        initial_key = 'initial'
+
+        for state_data in state_list:
+            if isinstance(state_data, dict):
+                current_parent_path = parent_path + [state_data['name']]
+                if initial_key in state_data:
+                    current_parent_path = current_parent_path + [state_data[initial_key]]
+                    return '_'.join(current_parent_path)
+
+                children = state_data.get('children', [])
+                result = self._find_the_1st_initial_state(children, current_parent_path)
+                if result is not None:
+                    return result
+
+        return None
 
     def _build_states(self, state_list, parent=None):
         for state_data in state_list:
@@ -647,7 +681,13 @@ class StateMachineWidget(QWidget):
                 return json.load(f)
         except FileNotFoundError:
             return None
-        
+        except json.JSONDecodeError:
+            text = f'File {self.STATES_CONFIG} is not an valid JSON'
+            print(text)
+            self.warning_error_msg_box.setText(text)
+            self.warning_error_msg_box.setWindowTitle('Warning')
+            self.warning_error_msg_box.show()
+
     def _load_transitions(self):
         merged_json = []
         try:
@@ -662,7 +702,11 @@ class StateMachineWidget(QWidget):
                     except FileNotFoundError:
                         print(f"文件 {file_path} 未找到。")
                     except json.JSONDecodeError:
-                        print(f"文件 {file_path} 不是有效的 JSON 文件。")
+                        text = f'File {file_path} is not an valid JSON'
+                        print(text)
+                        self.warning_error_msg_box.setText(text)
+                        self.warning_error_msg_box.setWindowTitle('Warning')
+                        self.warning_error_msg_box.show()
             return merged_json
         except FileNotFoundError:
             return None
@@ -786,7 +830,9 @@ class MainWindow(QMainWindow):
 
         self.config_page = ConfigPage(icon=self.windowIcon())
 
-        self.state_machine = StateMachineWidget(self.config_page.main_resource_input.text(), self.config_page.secondary_resource_input.text())
+        self.state_machine = StateMachineWidget(self.config_page.main_resource_input.text(), 
+                                                self.config_page.secondary_resource_input.text(),
+                                                icon=self.windowIcon())
 
         self.table_view_w_search = TableViewContainsSearchWidget()
         # self.table_view_w_search.setMaximumHeight(250)
@@ -796,6 +842,8 @@ class MainWindow(QMainWindow):
             for row, transition in enumerate(self.state_machine.json_transitions):
                 condition = transition['conditions']
                 self.state_machine.setup_conditions_allowed_slot(condition, 'Yes')
+        else:
+            self.table_view_w_search.table_view.clear_transitions()
 
         self._load_conditions_allowed()
 
@@ -820,7 +868,7 @@ class MainWindow(QMainWindow):
         menubar = self.menuBar()
         settings_menu = QMenu("&Edit", self)
         settings_action = settings_menu.addAction("Configure")
-        settings_action.setShortcut('Ctrl+,')
+        settings_action.setShortcut('Ctrl+G')
 
         settings_action.triggered.connect(self.open_config_page)
         menubar.addMenu(settings_menu)
@@ -871,6 +919,8 @@ class MainWindow(QMainWindow):
             for row, transition in enumerate(self.state_machine.json_transitions):
                 condition = transition['conditions']
                 self.state_machine.setup_conditions_allowed_slot(condition, 'Yes')
+        else:
+            self.table_view_w_search.table_view.clear_transitions()
 
         self._load_conditions_allowed()
 

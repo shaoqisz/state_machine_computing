@@ -20,6 +20,7 @@
 
             "HorStoppedState",          
             "HorMotionStoppingState"
-        ]
+        ],
+        "initial": "HorStoppedState"
     }
 ]

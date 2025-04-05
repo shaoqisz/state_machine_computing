@@ -1,0 +1,6 @@
+[
+{"trigger": "MsgStateTimerBKST",        "conditions": "FloatFindDirectionTimerITrans",     "source": "CouchSm_FloatSState_FloatFindDirectionState",     "dest": ""},
+{"trigger": "MsgStateTimerBKST",        "conditions": "FloatAssistTimerITrans",            "source": "CouchSm_FloatSState_FloatAssistState",            "dest": ""},
+{"trigger": "MsgPositionCurrentBKST",   "conditions": "CouchUpdatePositionCurrentITrans",  "source": "CouchSm_FloatSState",                             "dest": ""}
+
+]

@@ -1,0 +1,21 @@
+[
+{"trigger": "MsgPositionBKST",              "conditions": "StoppingIGuard",                         "source": "CouchSm_HomedJogPtpSState_StoppingState",     "dest": ""},
+
+{"trigger": "MsgPositionBKST",              "conditions": "InPositionIGuard",                       "source": "CouchSm_HomedJogPtpSState_InPositionState", "dest": ""},
+{"trigger": "MsgStopREQ",                   "conditions": "InPositionITrans",                       "source": "CouchSm_HomedJogPtpSState_InPositionState", "dest": ""},
+{"trigger": "MsgAxisMotionBKST",            "conditions": "InPositionAxisMotionAnswerITrans",       "source": "CouchSm_HomedJogPtpSState_InPositionState", "dest": ""},
+{"trigger": "MsgStateTimerBKST",            "conditions": "InPositionCheckVPosIGuard",              "source": "CouchSm_HomedJogPtpSState_InPositionState", "dest": ""},
+{"trigger": "MsgTargetReachedPendingANS",   "conditions": "InPositionTargetReachedPendingIGuard",   "source": "CouchSm_HomedJogPtpSState_InPositionState", "dest": "" },
+
+{"trigger": "MsgHorQuickMoveREQ",           "conditions": "MotionSStateQuickMoveITrans",            "source": "CouchSm_HomedJogPtpSState_MotionSState",  "dest": ""},
+{"trigger": "MsgSubHorQuickMoveREQ",        "conditions": "MotionSStateQuickMoveITrans",            "source": "CouchSm_HomedJogPtpSState_MotionSState",  "dest": ""},
+
+
+{"trigger": "MsgStateTimerBKST",            "conditions": "MovingITrans",                           "source": "CouchSm_HomedJogPtpSState_MotionSState_MovingState",  "dest": ""},
+{"trigger": "MsgPositionBKST",              "conditions": "CouchUpdatePositionITrans",              "source": "CouchSm_HomedJogPtpSState_MotionSState_MovingState",  "dest": ""},
+
+{"trigger": "MsgStateTimerBKST",            "conditions": "MoveInitIGuard",                         "source": "CouchSm_HomedJogPtpSState_MotionSState_MoveInitState",  "dest": ""},
+{"trigger": "MsgPositionBKST",              "conditions": "CouchUpdatePositionITrans",              "source": "CouchSm_HomedJogPtpSState_MotionSState_WaitForMovingState",  "dest": ""}
+
+]
+

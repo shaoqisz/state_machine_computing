@@ -176,7 +176,7 @@ class MyTableView(QTableView):
                     self.condition_allowed_changed.emit(condition_item.text(), allowed_item.text())
 
     def set_transitions(self, json_transitions):
-        self.clear_data()
+        self.clear_transitions()
 
         for row, transition in enumerate(json_transitions):
             source = transition['source']
@@ -234,7 +234,7 @@ class MyTableView(QTableView):
             return row_data
         return None
 
-    def clear_data(self):
+    def clear_transitions(self):
         self.table_model.clear()
         self.__setupTableView()
 
