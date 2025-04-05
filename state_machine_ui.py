@@ -2,23 +2,22 @@ import sys, os
 import json
 import math
 import configparser
-import datetime
 
 from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QComboBox, QPushButton, QHBoxLayout, 
                              QPlainTextEdit, QShortcut, QSizePolicy, QSplitter, QMenu, QMainWindow, QMessageBox)
-
 from PyQt5.QtGui import QPainter, QColor, QPen, QPolygonF, QPainterPath, QFont, QIcon, QKeySequence
 from PyQt5.QtCore import Qt, QSettings, QPointF, QEvent, pyqtSignal
 from transitions.core import MachineError
 
+
 from state_machine_core import Matter, CustomStateMachine
 
+
 from conditions_table_view import TableViewContainsSearchWidget
-
 from config_page import ConfigPage
+from colorful_text_edit import ColorfulTextEdit
 
 
-TIMESTAMP_FORMAT = "%Y-%m-%d_%H:%M:%S.%f"
 
 
 # 定义不同层级的拖动锚点颜色
@@ -46,9 +45,15 @@ class State:
 
 class StateMachineWidget(QWidget):
 
-    transition_message_signal = pyqtSignal(str)
+    trigger_name_signal = pyqtSignal(str)
+    transition_message_signal = pyqtSignal(str, bool)
+    state_machine_init_signal = pyqtSignal(str)
+    new_state_machine_signal = pyqtSignal(str)
 
-    def __init__(self, STATES_CONFIG, TRANSITIONS_CONFIG_FOLDER, icon=None):
+    enter_state_changed_signal = pyqtSignal(str)
+    leave_state_changed_signal = pyqtSignal(str)
+
+    def __init__(self, icon=None):
         super().__init__()
 
         self.icon = icon
@@ -60,6 +65,7 @@ class StateMachineWidget(QWidget):
         
         self.focus_state = None
         self.focus_transition = None
+        self.last_current_state = None
 
         self.is_dragging_all = False
         self.scale_factor = 1.0
@@ -68,12 +74,8 @@ class StateMachineWidget(QWidget):
         self.offset_x = 0.0
         self.offset_y = 0.0
 
-        # self.STATES_CONFIG = './config/states/states_config.json'
-        # self.TRANSITIONS_CONFIG_FOLDER = './config/transitions/pmc'
-
-        self.STATES_CONFIG = STATES_CONFIG # './config/states/states_config.json'
-        self.TRANSITIONS_CONFIG_FOLDER = TRANSITIONS_CONFIG_FOLDER # './config/transitions/pmc'
-
+        self.STATES_CONFIG = None
+        self.TRANSITIONS_CONFIG_FOLDER = None
 
         self.font = QFont()
         self.font.setPointSize(10)
@@ -82,26 +84,63 @@ class StateMachineWidget(QWidget):
 
         self.states = []
         
-        self.json_states = self._load_states()
-        self.json_transitions = self._load_transitions()
+        self.json_states = None
+        self.json_transitions = None
 
-        if self.json_states is not None:
-            self._build_states(self.json_states)
 
-        self._load_state_positions()
+    # def __init__(self, STATES_CONFIG, TRANSITIONS_CONFIG_FOLDER, icon=None):
+    #     super().__init__()
 
-        self._layout_states()
+    #     self.icon = icon
 
-        self._adjust_all_states()
+    #     self.warning_error_msg_box = QMessageBox()
+    #     self.warning_error_msg_box.setWindowIcon(self.icon)
+    #     self.warning_error_msg_box.setIcon(QMessageBox.Warning)
+    #     self.warning_error_msg_box.setStandardButtons(QMessageBox.Ok)
+        
+    #     self.focus_state = None
+    #     self.focus_transition = None
 
-        initial_state_name = self._find_the_1st_initial_state(self.json_states)
-        self.set_init_state(initial_state_name)
+    #     self.is_dragging_all = False
+    #     self.scale_factor = 1.0
+    #     self.min_scale = 0.1
+    #     self.max_scale = 5.0
+    #     self.offset_x = 0.0
+    #     self.offset_y = 0.0
 
-        if self.json_transitions is not None:
-            # print(f'json_transitions={json_transitions}')
-            self._connect_states(self.json_transitions)
+    #     self.STATES_CONFIG = STATES_CONFIG # './config/states/states_config.json'
+    #     self.TRANSITIONS_CONFIG_FOLDER = TRANSITIONS_CONFIG_FOLDER # './config/transitions/pmc'
 
-    def reload_config(self, STATES_CONFIG, TRANSITIONS_CONFIG_FOLDER):
+    #     self.font = QFont()
+    #     self.font.setPointSize(10)
+
+    #     self.merged_transitions = {}
+
+    #     self.states = []
+        
+    #     self.json_states = self._load_states()
+    #     self.json_transitions = self._load_transitions()
+
+    #     if self.json_states is not None:
+    #         self._build_states(self.json_states)
+
+    #     self._load_state_positions()
+
+    #     self._layout_states()
+
+    #     self._adjust_all_states()
+
+    #     initial_state_name = self._find_the_1st_initial_state(self.json_states)
+    #     self.set_init_state(initial_state_name)
+
+    #     if self.json_transitions is not None:
+    #         # print(f'json_transitions={json_transitions}')
+    #         self._connect_states(self.json_transitions)
+
+    def reload_config(self, config_name, STATES_CONFIG, TRANSITIONS_CONFIG_FOLDER):
+
+        self.new_state_machine_signal.emit(config_name)
+
         self.STATES_CONFIG = STATES_CONFIG
         self.TRANSITIONS_CONFIG_FOLDER = TRANSITIONS_CONFIG_FOLDER
         self.font.setPointSize(10)
@@ -130,6 +169,8 @@ class StateMachineWidget(QWidget):
             self._connect_states(self.json_transitions)
 
     def set_init_state(self, state_name=None):
+        self.state_machine_init_signal.emit(state_name)
+
         self.model = Matter()
         extra_args = dict(auto_transitions=False, show_conditions=True, show_state_attributes=True)
         if state_name is not None:
@@ -291,6 +332,12 @@ class StateMachineWidget(QWidget):
         painter.setPen(QPen(QColor(0, 0, 0), 2))
         if self.model.state == self.get_full_path(state):
             painter.setBrush(Qt.GlobalColor.yellow)
+
+            if self.last_current_state is not state:
+                if self.last_current_state is not None:
+                    self.leave_state_changed_signal.emit(self.get_full_path(self.last_current_state))
+                self.last_current_state = state
+                self.enter_state_changed_signal.emit(self.model.state)
         else:
             # painter.setBrush(QColor(200, 200, 200))
             painter.setBrush(Qt.GlobalColor.white)
@@ -847,26 +894,11 @@ class StateMachineWidget(QWidget):
         full_path = "_".join(path_parts)
         return full_path
 
-    # def _find_state_by_name2(self, name):
-    #     parts = name.split('_')
-    #     current_states = self.states
-    #     current_state = None
-    #     for part in parts:
-    #         found = False
-    #         for state in current_states:
-    #             if state.name == part:
-    #                 current_states = state.children
-    #                 current_state = state
-    #                 found = True
-    #                 break
-    #         if not found:
-    #             return None
-    #     return current_state
-
     def trigger_transition(self, trigger):
         try:
-            # 触发状态迁移
+            self.trigger_name_signal.emit(trigger)
             getattr(self.model, trigger)()
+
             # 重绘界面以更新当前状态显示
             self.update()
         except AttributeError as e:
@@ -877,21 +909,7 @@ class StateMachineWidget(QWidget):
     def create_new_function(self, old_name, return_code, signal):
 
         def new_function(self):
-
-            now = datetime.datetime.now()
-            timestamp = now.strftime(TIMESTAMP_FORMAT)
-
-            # color_func_name = f'<span style="color: turquoise;">{old_name}</span><span style="color: gold;">()</span>'
-            color_func_name = f'<span style="color: black;">{old_name}</span><span style="color: dark;">()</span>'
-            color_return_code = None
-            if return_code is True:
-                color_return_code = f'<span style="color: lime; font-weight: bold;">{return_code}</span>'
-            else:
-                color_return_code = f'<span style="color: red; font-weight: bold;">{return_code}</span>'
-
-            print(f"[{timestamp}] {color_func_name} return {color_return_code}")
-            signal.emit(f'<p style="white-space: pre-wrap; color: green;">[{timestamp}] {color_func_name} return {color_return_code}</p>')
-
+            signal.emit(old_name, return_code)
             return return_code
 
         new_function.__name__ = old_name
@@ -919,56 +937,32 @@ class MainWindow(QMainWindow):
         sm_border_widget.setStyleSheet("border: 2px solid gray; border-radius: 5px;")
         sm_border_widget.setLayout(QVBoxLayout())
 
+        # config
         self.config_page = ConfigPage(icon=self.windowIcon())
 
-        self.state_machine = StateMachineWidget(self.config_page.main_resource_input.text(), 
-                                                self.config_page.secondary_resource_input.text(),
-                                                icon=self.windowIcon())
+        # text edit
+        self.text_edit = ColorfulTextEdit()
 
+        # state machine
+        self.state_machine = StateMachineWidget(icon=self.windowIcon())
+        self.state_machine.trigger_name_signal.connect(self.trigger_name_slot)
+        self.state_machine.transition_message_signal.connect(self.transition_message_slot)
+        self.state_machine.state_machine_init_signal.connect(self.state_machine_init_slot)
+        self.state_machine.new_state_machine_signal.connect(self.new_state_machine_slot)
+        self.state_machine.enter_state_changed_signal.connect(self.enter_state_slot)
+        self.state_machine.leave_state_changed_signal.connect(self.leave_state_slot)
+
+        self.state_machine.reload_config(self.config_page.config_name_combobox.currentText(),
+                                         self.config_page.main_resource_input.text(), 
+                                         self.config_page.secondary_resource_input.text())
+
+        # table view
         self.table_view_w_search = TableViewContainsSearchWidget()
-        # self.table_view_w_search.table_view.setStyleSheet("""
-        #     QTableView {
-        #         background-color: black;
-        #         color: #ADD8E6;
-        #         gridline-color: gray;
-        #         font-size: 12px;
-        #     }
-        #     QHeaderView::section {
-        #         background-color: black;
-        #         color: #ADD8E6;
-        #         border: 1px solid gray;
-        #     }
-        #     QTableView::item {
-        #         background-color: black;
-        #         color: #ADD8E6;
-        #     }
-        #     QTableView::item:selected {
-        #         background-color: gray;
-        #         color: white;
-        #     }
-        #     QHeaderView::section:horizontal {
-        #         background-color: black;
-        #         color: green;
-        #         border-bottom: 1px solid gray;
-        #     }
-        #     QHeaderView::section:vertical {
-        #         background-color: black;
-        #         color: green;
-        #         border-right: 1px solid gray;
-        #     }
-        #     QTableCornerButton::section {
-        #         background-color: black;
-        #         color: #ADD8E6;
-        #         border: 1px solid gray;
-        #     }
-        # """)
-
         self.table_view_w_search.table_view.setStyleSheet("""
             QTableView {
                 font-size: 12px;
             }
         """)
-
         if self.state_machine.json_transitions is not None:
             self.table_view_w_search.set_transitions(self.config_page.config_name_combobox.currentText(), self.state_machine.json_transitions)
             for row, transition in enumerate(self.state_machine.json_transitions):
@@ -976,9 +970,10 @@ class MainWindow(QMainWindow):
                 self.state_machine.setup_conditions_allowed_slot(condition, 'Yes')
         else:
             self.table_view_w_search.clear_transitions()
-
         self._load_conditions_allowed()
 
+
+        # layout
         main_widget = QWidget(self)
         main_widget.setLayout(QVBoxLayout())
 
@@ -990,20 +985,13 @@ class MainWindow(QMainWindow):
         margin = 4
         sm_border_widget.layout().setContentsMargins(margin, margin, margin, margin)
         # sm_border_widget.layout().setSpacing(0)
-
-        ################
-        self.plain_text_edit = QPlainTextEdit()
-        # self.plain_text_edit.setMinimumHeight(50)
-        # self.plain_text_edit.setStyleSheet("background-color: black; color: white;")
-        # self.plain_text_edit.setStyleSheet("background-color: black;")
-
         ################
 
         self.hor_spliter = QSplitter(Qt.Horizontal, self)
         self.hor_spliter.setObjectName("hor_spliter")
 
         self.hor_spliter.addWidget(self.table_view_w_search)
-        self.hor_spliter.addWidget(self.plain_text_edit)
+        self.hor_spliter.addWidget(self.text_edit)
 
         ################
 
@@ -1016,25 +1004,59 @@ class MainWindow(QMainWindow):
 
         ##############
 
+        # menu
         menubar = self.menuBar()
         settings_menu = QMenu("&Edit", self)
         settings_action = settings_menu.addAction("Configure")
         settings_action.setShortcut('Ctrl+G')
-
         settings_action.triggered.connect(self.open_config_page)
         menubar.addMenu(settings_menu)
 
+        # load settings
         self.load_settings()
 
+        # connections
         self.table_view_w_search.trigger_signal.connect(self.trigger_slot)
         self.config_page.config_changed_signal.connect(self.reload_config)
-
         # self.table_view_w_search.init_state_signal.connect(self.init_state_slot)
         self.table_view_w_search.table_view.condition_allowed_changed.connect(self.state_machine.setup_conditions_allowed_slot)
-        self.state_machine.transition_message_signal.connect(self.transition_message_slot)
 
-    def transition_message_slot(self, message):
-        self.plain_text_edit.appendHtml(message)
+    def trigger_name_slot(self, trigger):
+        self.text_edit.append_log(object_name='sm',
+                                  function_name=trigger, 
+                                  function_params=None, 
+                                  return_code=None,
+                                  function_type=ColorfulTextEdit.FunctionType.trigger)
+
+    def transition_message_slot(self, function_name, return_code):
+        self.text_edit.append_log(object_name='sm',
+                                  function_name=function_name, 
+                                  function_params=None, 
+                                  return_code=return_code)
+        
+    def state_machine_init_slot(self, state_name):
+        self.text_edit.append_log(object_name='sm',
+                                  function_name='init', 
+                                  function_params=[state_name], 
+                                  return_code=None)
+        
+    def new_state_machine_slot(self, sm_name):
+        self.text_edit.append_log_new_machine(sm_name, 'sm')
+
+    def enter_state_slot(self, name):
+        self.text_edit.append_log(object_name='sm',
+                                  function_name=f'{name}.entry', 
+                                  function_params=None, 
+                                  return_code=None,
+                                  function_type=ColorfulTextEdit.FunctionType.transition)
+
+    def leave_state_slot(self, name):
+        self.text_edit.append_log(object_name='sm',
+                                  function_name=f'{name}.exit', 
+                                  function_params=None, 
+                                  return_code=None,
+                                  function_type=ColorfulTextEdit.FunctionType.transition)
+        
 
     def _save_conditions_allowed(self):
         conditions_allow = self.table_view_w_search.table_view._get_all_conditions_allowed()
@@ -1067,7 +1089,9 @@ class MainWindow(QMainWindow):
         self._save_conditions_allowed()
 
         self.state_machine._save_state_positions()
-        self.state_machine.reload_config(self.config_page.main_resource_input.text(), self.config_page.secondary_resource_input.text())
+        self.state_machine.reload_config(self.config_page.config_name_combobox.currentText(),
+                                         self.config_page.main_resource_input.text(), 
+                                         self.config_page.secondary_resource_input.text())
 
         if self.state_machine.json_transitions is not None:
             self.table_view_w_search.set_transitions(self.config_page.config_name_combobox.currentText(), self.state_machine.json_transitions)
@@ -1092,9 +1116,6 @@ class MainWindow(QMainWindow):
             # allowed = row[4]
             # print(f'trigger_slot source={source}, trigger={trigger}, conditions={conditions}, dest={dest}, allowed={allowed}')
             self.state_machine.trigger_transition(trigger)
-
-    # def init_state_slot(self, state_name):
-    #     self.state_machine.set_init_state(state_name)
 
     def closeEvent(self, event):
         self._save_conditions_allowed()

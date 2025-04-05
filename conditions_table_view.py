@@ -360,6 +360,42 @@ class TableViewContainsSearchWidget(QWidget):
         self.table_view.clear_transitions()
 
     def setup_ui(self, table_view):
+        #     QTableView {
+        #         background-color: black;
+        #         color: #ADD8E6;
+        #         gridline-color: gray;
+        #         font-size: 12px;
+        #     }
+        #     QHeaderView::section {
+        #         background-color: black;
+        #         color: #ADD8E6;
+        #         border: 1px solid gray;
+        #     }
+        #     QTableView::item {
+        #         background-color: black;
+        #         color: #ADD8E6;
+        #     }
+        #     QTableView::item:selected {
+        #         background-color: gray;
+        #         color: white;
+        #     }
+        #     QHeaderView::section:horizontal {
+        #         background-color: black;
+        #         color: green;
+        #         border-bottom: 1px solid gray;
+        #     }
+        #     QHeaderView::section:vertical {
+        #         background-color: black;
+        #         color: green;
+        #         border-right: 1px solid gray;
+        #     }
+        #     QTableCornerButton::section {
+        #         background-color: black;
+        #         color: #ADD8E6;
+        #         border: 1px solid gray;
+        #     }
+        # """)
+
         self.table_view = table_view
         if self.table_view is None:
             self.table_view = MyTableView()
