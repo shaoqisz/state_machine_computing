@@ -2,10 +2,13 @@ import sys, os
 import json
 import math
 import configparser
+import datetime
 
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QComboBox, QPushButton, QHBoxLayout, QShortcut, QSizePolicy, QSplitter, QMenu, QMainWindow, QMessageBox
+from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QComboBox, QPushButton, QHBoxLayout, 
+                             QPlainTextEdit, QShortcut, QSizePolicy, QSplitter, QMenu, QMainWindow, QMessageBox)
+
 from PyQt5.QtGui import QPainter, QColor, QPen, QPolygonF, QPainterPath, QFont, QIcon, QKeySequence
-from PyQt5.QtCore import Qt, QSettings, QPointF, QEvent
+from PyQt5.QtCore import Qt, QSettings, QPointF, QEvent, pyqtSignal
 from transitions.core import MachineError
 
 from state_machine_core import Matter, CustomStateMachine
@@ -13,6 +16,9 @@ from state_machine_core import Matter, CustomStateMachine
 from conditions_table_view import TableViewContainsSearchWidget
 
 from config_page import ConfigPage
+
+
+TIMESTAMP_FORMAT = "%Y-%m-%d_%H:%M:%S.%f"
 
 
 # 定义不同层级的拖动锚点颜色
@@ -39,6 +45,9 @@ class State:
         self.name_rect = None
 
 class StateMachineWidget(QWidget):
+
+    transition_message_signal = pyqtSignal(str)
+
     def __init__(self, STATES_CONFIG, TRANSITIONS_CONFIG_FOLDER, icon=None):
         super().__init__()
 
@@ -860,20 +869,34 @@ class StateMachineWidget(QWidget):
         except MachineError as e:
             print(f"Invalid trigger: {trigger} {e}")
 
-    def setup_conditions_allowed_slot(self, conditions, allowed):
-        def always_true(self):
-            print(f'{sys._getframe().f_code.co_name}:{sys._getframe().f_lineno} calling always_true')
-            return True
-        def always_false(self):
-            print(f'{sys._getframe().f_code.co_name}:{sys._getframe().f_lineno} calling always_false')
-            return False
+    def create_new_function(self, old_name, return_code, signal):
 
-        if conditions is not None:
-            print(f'set Matter.{conditions} always return ({allowed})')
-            if allowed.lower() == 'yes':
-                setattr(Matter, conditions, always_true)
+        def new_function(self):
+
+            now = datetime.datetime.now()
+            timestamp = now.strftime(TIMESTAMP_FORMAT)
+
+            color_func_name = f'<span style="color: turquoise;">{old_name}</span><span style="color: gold;">()</span>'
+            color_return_code = None
+            if return_code is True:
+                color_return_code = f'<span style="color: lime; font-weight: bold;">{return_code}</span>'
             else:
-                setattr(Matter, conditions, always_false)
+                color_return_code = f'<span style="color: red; font-weight: bold;">{return_code}</span>'
+
+            print(f"[{timestamp}] {color_func_name} return {color_return_code}")
+            signal.emit(f'<p style="white-space: pre-wrap; color: green;">[{timestamp}] {color_func_name} return {color_return_code}</p>')
+
+            return return_code
+
+        new_function.__name__ = old_name
+
+        return new_function
+
+    def setup_conditions_allowed_slot(self, conditions, allowed):        
+        new_func = self.create_new_function(conditions, bool(allowed.lower() == 'yes'), self.transition_message_signal)
+        if conditions is not None:
+            # print(f'set Matter.{conditions} always return ({allowed})')
+            setattr(Matter, conditions, new_func)
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -918,8 +941,25 @@ class MainWindow(QMainWindow):
         ################
         widget.layout().addWidget(self.state_machine)
 
+        ################
+        self.plain_text_edit = QPlainTextEdit()
+        self.plain_text_edit.setMinimumHeight(50)
+        self.plain_text_edit.setStyleSheet("background-color: black; color: white;")
+        # self.plain_text_edit.setStyleSheet("background-color: black;")
+
+        ################
+
+        self.hor_spliter = QSplitter(Qt.Horizontal, self)
+        self.hor_spliter.setObjectName("hor_spliter")
+
+        self.hor_spliter.addWidget(self.table_view_w_search)
+        self.hor_spliter.addWidget(self.plain_text_edit)
+
+        ################
+
+
         self.vert_spliter.addWidget(widget)
-        self.vert_spliter.addWidget(self.table_view_w_search)
+        self.vert_spliter.addWidget(self.hor_spliter)
 
         main_widget.layout().addWidget(self.vert_spliter)
 
@@ -942,6 +982,10 @@ class MainWindow(QMainWindow):
 
         # self.table_view_w_search.init_state_signal.connect(self.init_state_slot)
         self.table_view_w_search.table_view.condition_allowed_changed.connect(self.state_machine.setup_conditions_allowed_slot)
+        self.state_machine.transition_message_signal.connect(self.transition_message_slot)
+
+    def transition_message_slot(self, message):
+        self.plain_text_edit.appendHtml(message)
 
     def _save_conditions_allowed(self):
         conditions_allow = self.table_view_w_search.table_view._get_all_conditions_allowed()
