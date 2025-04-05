@@ -653,11 +653,12 @@ class StateMachineWidget(QWidget):
                         result.append(state_data)
             return result
 
-        name_without_ext, file_extension = os.path.splitext(self.STATES_CONFIG)
-        position_config = f'{name_without_ext}_with_position{file_extension}'
         state_hierarchy = save_state_hierarchy(self._get_states_hierarchy(), [])
-        with open(position_config, 'w') as f:
-            json.dump(state_hierarchy, f, indent=4, ensure_ascii=False)
+        if len(state_hierarchy) > 0:
+            name_without_ext, file_extension = os.path.splitext(self.STATES_CONFIG)
+            position_config = f'{name_without_ext}_with_position{file_extension}'
+            with open(position_config, 'w') as f:
+                json.dump(state_hierarchy, f, indent=4, ensure_ascii=False)
 
 
     def _load_state_positions(self):
