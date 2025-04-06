@@ -552,11 +552,14 @@ class StateMachineWidget(QWidget):
         if state is not None:
             menu = QMenu(self)
 
-            copy_action = menu.addAction("Copy")
-            copy_action.triggered.connect(lambda b, name=state.name: self.copy_name_from_menu_slot(b, name))
-
             init_action = menu.addAction("Initial State")
             init_action.triggered.connect(lambda b, name=self.get_full_path(state): self.init_state_slot(b, name))
+
+            menu.addSeparator()
+
+            copy_state_name_action = menu.addAction("Copy State Name")
+            copy_state_name_action.triggered.connect(lambda b, name=state.name: self.copy_name_from_menu_slot(b, name))
+
             menu.exec_(event.globalPos())
             return
 
@@ -565,20 +568,30 @@ class StateMachineWidget(QWidget):
             menu = QMenu(self)
             _, triggers, conditions_list = transition
 
-            copy_action = menu.addAction("Copy All")
-            copy_action.triggered.connect(lambda b, name=triggers: self.copy_name_from_menu_slot(b, name))
-
             triggers_list = triggers.split('|')
 
             for i, trigger in enumerate(triggers_list):
                 sub_menu = QMenu(trigger, self)
                 menu.addMenu(sub_menu)
                 
-                trigger_it_action = sub_menu.addAction(f'Trigger - {conditions_list[i]}()')
+                trigger_it_action = sub_menu.addAction(f'Trigger - [Condition: {conditions_list[i]}()]')
                 trigger_it_action.triggered.connect(lambda b, name=trigger: self.trigger_slot(b, name))
 
-                trigger_copy_action = sub_menu.addAction("Copy")
-                trigger_copy_action.triggered.connect(lambda b, name=trigger: self.copy_name_from_menu_slot(b, name))
+                if len(triggers_list) > 1:
+                    copy_trigger_action = sub_menu.addAction("Copy Trigger Name")
+                    copy_trigger_action.triggered.connect(lambda b, name=trigger: self.copy_name_from_menu_slot(b, name))
+
+                    copy_condition_action = sub_menu.addAction("Copy Condition Name")
+                    copy_condition_action.triggered.connect(lambda b, name=conditions_list[i]: self.copy_name_from_menu_slot(b, name))
+
+            menu.addSeparator()
+            
+            copy_triggers_action = menu.addAction("Copy Triggers Name")
+            copy_triggers_action.triggered.connect(lambda b, name=triggers: self.copy_name_from_menu_slot(b, name))
+
+            conditions = "|".join(conditions_list)
+            copy_conditions_action = menu.addAction("Copy Conditions Name")
+            copy_conditions_action.triggered.connect(lambda b, name=conditions: self.copy_name_from_menu_slot(b, name))
 
             menu.exec_(event.globalPos())
             return
