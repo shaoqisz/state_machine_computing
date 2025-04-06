@@ -1,0 +1,5 @@
+[
+{"trigger": "trigger1",  "conditions": "node1_node2_trans",       "source": "StateMachine_Node1",        "dest": "StateMachine_Node2"},
+{"trigger": "trigger2",  "conditions": "node2_node3_trans",       "source": "StateMachine_Node2",        "dest": "StateMachine_Node3"},
+{"trigger": "trigger3",  "conditions": "node3_node1_trans",       "source": "StateMachine_Node3",        "dest": "StateMachine_Node1"}
+]

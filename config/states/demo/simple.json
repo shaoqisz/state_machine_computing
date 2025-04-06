@@ -1,0 +1,9 @@
+[
+    {
+        "name": "StateMachine",
+        "children": [
+            "Node1", "Node2", "Node3"
+        ],
+        "initial": "Node1"
+    }
+]
