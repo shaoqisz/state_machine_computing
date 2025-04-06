@@ -1011,6 +1011,44 @@ class MainWindow(QMainWindow):
             self.table_view_w_search.clear_transitions()
         self._load_conditions_allowed()
 
+        ##############
+
+        self.right_widget = QWidget()
+        self.right_widget.setLayout(QVBoxLayout())
+
+        self.clear_btn = QPushButton('Clear')
+        self.add_separator_btn = QPushButton('Add Separator')
+
+        text_edit_bottom_widget_left = QWidget()
+        text_edit_bottom_widget_left.setLayout(QHBoxLayout())
+
+        text_edit_bottom_widget_right = QWidget()
+        text_edit_bottom_widget_right.setLayout(QHBoxLayout())
+
+        text_edit_bottom_widget_left.layout().addWidget(self.add_separator_btn)
+
+        text_edit_bottom_widget_left.layout().setAlignment(Qt.AlignmentFlag.AlignLeft)
+        text_edit_bottom_widget_left.layout().setContentsMargins(0,0,0,0)
+        text_edit_bottom_widget_left.layout().setSpacing(5)
+
+        text_edit_bottom_widget_right.layout().addWidget(self.clear_btn)
+
+        text_edit_bottom_widget_right.layout().setAlignment(Qt.AlignmentFlag.AlignRight)
+        text_edit_bottom_widget_right.layout().setContentsMargins(0,0,0,0)
+        text_edit_bottom_widget_right.layout().setSpacing(5)
+
+        self.text_edit_bottom_widget = QWidget()
+        self.text_edit_bottom_widget.setLayout(QHBoxLayout())
+
+        self.text_edit_bottom_widget.layout().addWidget(text_edit_bottom_widget_left)
+        self.text_edit_bottom_widget.layout().addWidget(text_edit_bottom_widget_right)
+
+        self.text_edit_bottom_widget.layout().setContentsMargins(10,0,10,0)
+        self.text_edit_bottom_widget.layout().setSpacing(5)
+
+
+        ###### 
+
 
         # layout
         main_widget = QWidget(self)
@@ -1026,11 +1064,20 @@ class MainWindow(QMainWindow):
         # sm_border_widget.layout().setSpacing(0)
         ################
 
+
+
+        self.right_widget.layout().addWidget(self.text_edit)
+        self.right_widget.layout().addWidget(self.text_edit_bottom_widget)
+        self.right_widget.layout().setContentsMargins(0,0,0,0)
+        self.right_widget.layout().setSpacing(5)
+
+        ####
+
         self.hor_spliter = QSplitter(Qt.Horizontal, self)
         self.hor_spliter.setObjectName("hor_spliter")
 
         self.hor_spliter.addWidget(self.table_view_w_search)
-        self.hor_spliter.addWidget(self.text_edit)
+        self.hor_spliter.addWidget(self.right_widget)
 
         ################
 
@@ -1059,6 +1106,9 @@ class MainWindow(QMainWindow):
         self.config_page.config_changed_signal.connect(self.reload_config)
         # self.table_view_w_search.init_state_signal.connect(self.init_state_slot)
         self.table_view_w_search.table_view.condition_allowed_changed.connect(self.state_machine.setup_conditions_allowed_slot)
+
+        self.add_separator_btn.clicked.connect(lambda:self.text_edit.add_separator())
+        self.clear_btn.clicked.connect(lambda: self.text_edit.clear())
 
     def trigger_name_slot(self, trigger):
         self.text_edit.append_log(object_name='sm',

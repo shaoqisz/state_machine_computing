@@ -36,6 +36,7 @@ class FunctionType(Enum):
 class ColorfulTextEdit(QPlainTextEdit):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.setReadOnly(True)
 
     def append_log_new_machine(self, machine_name, left_variable):
         self.appendHtml('<span style="color: #2ca20f; font-weight: bold;"> --------------------------- system restarted --------------------------- </span>')
@@ -44,6 +45,9 @@ class ColorfulTextEdit(QPlainTextEdit):
                                   function_params=[machine_name],
                                   return_code=None,
                                   left_variable=left_variable)
+        
+    def add_separator(self):
+        self.appendHtml('<span style="color: #2ca20f; font-weight: bold;"> --------------------------- user added separator --------------------------- </span>')
 
     def append_log(self, object_name, function_name, function_params, return_code, left_variable=None, function_type:FunctionType = FunctionType.other):
         now = datetime.datetime.now()
