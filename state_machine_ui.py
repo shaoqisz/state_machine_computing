@@ -28,6 +28,10 @@ LEVEL_COLORS = [
     Qt.GlobalColor.darkGray,
 ]
 
+
+def get_name_width(name, scale_factor):
+    return (len(name) + 5) * 8 * scale_factor
+
 class State:
     def __init__(self, name, children=None, parent=None):
         self.name = name
@@ -84,56 +88,6 @@ class StateMachineWidget(QWidget):
         
         self.json_states = None
         self.json_transitions = None
-
-
-    # def __init__(self, STATES_CONFIG, TRANSITIONS_CONFIG_FOLDER, icon=None):
-    #     super().__init__()
-
-    #     self.icon = icon
-
-    #     self.warning_error_msg_box = QMessageBox()
-    #     self.warning_error_msg_box.setWindowIcon(self.icon)
-    #     self.warning_error_msg_box.setIcon(QMessageBox.Warning)
-    #     self.warning_error_msg_box.setStandardButtons(QMessageBox.Ok)
-        
-    #     self.focus_state = None
-    #     self.focus_transition = None
-
-    #     self.is_dragging_all = False
-    #     self.scale_factor = 1.0
-    #     self.min_scale = 0.1
-    #     self.max_scale = 5.0
-    #     self.offset_x = 0.0
-    #     self.offset_y = 0.0
-
-    #     self.STATES_CONFIG = STATES_CONFIG # './config/states/states_config.json'
-    #     self.TRANSITIONS_CONFIG_FOLDER = TRANSITIONS_CONFIG_FOLDER # './config/transitions/pmc'
-
-    #     self.font = QFont()
-    #     self.font.setPointSize(10)
-
-    #     self.merged_transitions = {}
-
-    #     self.states = []
-        
-    #     self.json_states = self._load_states()
-    #     self.json_transitions = self._load_transitions()
-
-    #     if self.json_states is not None:
-    #         self._build_states(self.json_states)
-
-    #     self._load_state_positions()
-
-    #     self._layout_states()
-
-    #     self._adjust_all_states()
-
-    #     initial_state_name = self._find_the_1st_initial_state(self.json_states)
-    #     self.set_init_state(initial_state_name)
-
-    #     if self.json_transitions is not None:
-    #         # print(f'json_transitions={json_transitions}')
-    #         self._connect_states(self.json_transitions)
 
     def reload_config(self, config_name, STATES_CONFIG, TRANSITIONS_CONFIG_FOLDER):
 
@@ -326,43 +280,46 @@ class StateMachineWidget(QWidget):
             painter.drawText(x, new_y, conditions)
 
     def _draw_state(self, painter : QPainter, state):
-        # 名字锚点
+        # 0. 计算名字锚点长度
+        rect_2_name_margin = 10
         x, y, w, h = state.rect
-        anchor_width = (len(state.name) + 5) * 8 * self.scale_factor
-        anchor_x = x + 10
-        anchor_y = y + 10
+        anchor_width = get_name_width(state.name, self.scale_factor) # (len(state.name) + 5) * 8 * self.scale_factor
+        anchor_x = x + rect_2_name_margin
+        anchor_y = y + rect_2_name_margin
         anchor_height = 20*self.scale_factor
         anchor_x, anchor_y, anchor_width, anchor_height = [round(anchor_x), round(anchor_y), round(anchor_width), round(anchor_height)]
         state.name_rect = [anchor_x, anchor_y, anchor_width, anchor_height]
-
         self.set_font_style(painter, state)
 
-        # 绘制状态矩形
+        # 1. 绘制矩形
         painter.setPen(QPen(QColor(0, 0, 0), 2))
         if self.model.state == self.get_full_path(state):
             painter.setBrush(Qt.GlobalColor.yellow)
-
             if self.last_current_state is not state:
                 if self.last_current_state is not None:
                     self.leave_state_changed_signal.emit(self.get_full_path(self.last_current_state))
                 self.last_current_state = state
                 self.enter_state_changed_signal.emit(self.model.state)
         else:
-            # painter.setBrush(QColor(200, 200, 200))
             painter.setBrush(Qt.GlobalColor.white)
-        painter.drawRoundedRect(round(x), round(y), round(w), round(h), 10, 10)
+
+        radius = 10
+        if state.children is None or len(state.children) == 0:
+            painter.drawRoundedRect(round(x), round(y), round(anchor_width+rect_2_name_margin*2), round(anchor_height+rect_2_name_margin*2), radius, radius)
+        else:
+            painter.drawRoundedRect(round(x), round(y), round(w), round(h), radius, radius)
         
-        # 绘制名字矩形
+        # 2. 绘制名字矩形
         color_index = min(state.level, len(LEVEL_COLORS) - 1)
         state.color = LEVEL_COLORS[color_index]
         painter.setBrush(LEVEL_COLORS[color_index])
         painter.drawRect(*state.name_rect)
 
-        # 绘制状态名
+        # 3. 绘制状态名
         painter.setPen(QPen(QColor(255, 255, 255), 1))
-        painter.drawText(anchor_x + 5, anchor_y + anchor_height // 2 + 5, state.name)
+        painter.drawText(anchor_x + 5, anchor_y + anchor_height - round(rect_2_name_margin/2*self.scale_factor), state.name)
 
-        # 递归绘制子状态
+        # 4. 递归绘制子状态
         for child in state.children:
             self._draw_state(painter, child)
 
@@ -542,7 +499,7 @@ class StateMachineWidget(QWidget):
         self.offset_y = new_offset_y
 
         # 重绘界面
-        self.update()
+        self._adjust_all_states()
 
 
     def contextMenuEvent(self, event):
@@ -636,7 +593,8 @@ class StateMachineWidget(QWidget):
             screen_anchor_y = triggers_pos[1] * self.scale_factor + self.offset_y
             screen_anchor_height = 20 * self.scale_factor
             # screen_anchor_height_x2 = screen_anchor_height * 2
-            screen_anchor_width = max((len(triggers) + 5) * 8 * self.scale_factor, (len(conditions) + 5) * 8 * self.scale_factor)
+            # screen_anchor_width = max((len(triggers) + 5) * 8 * self.scale_factor, (len(conditions) + 5) * 8 * self.scale_factor)
+            screen_anchor_width = max(get_name_width(triggers, self.scale_factor), get_name_width(conditions, self.scale_factor))
 
             if (screen_anchor_x <= x <= screen_anchor_x + screen_anchor_width and
                 (screen_anchor_y - screen_anchor_height)<= y <= screen_anchor_y + screen_anchor_height):
@@ -714,14 +672,39 @@ class StateMachineWidget(QWidget):
 
     def _adjust_parent(self, state):
         # print(f'{__name__}')
+        rect_2_name_margin = 10
+        
         parent = state.parent
         while parent:
             all_children = self._get_all_children(parent)
             if all_children:
-                min_x = min([child.rect[0] for child in all_children])
-                min_y = min([child.rect[1] for child in all_children])
-                max_x = max([child.rect[0] + child.rect[2] for child in all_children])
-                max_y = max([child.rect[1] + child.rect[3] for child in all_children])
+                # 初始化最小和最大值
+                min_x = float('inf')
+                min_y = float('inf')
+                max_x = float('-inf')
+                max_y = float('-inf')
+
+                # 遍历所有子元素
+                for child in all_children:
+                    # 更新 min_x
+                    if child.rect[0] < min_x:
+                        min_x = child.rect[0]
+                    # 更新 min_y
+                    if child.rect[1] < min_y:
+                        min_y = child.rect[1]
+                    # 更新 max_x
+                    if child.children is None or len(child.children) == 0:
+                        current_max_x = child.rect[0] + get_name_width(child.name, self.scale_factor) + rect_2_name_margin*2
+                        if current_max_x > max_x:
+                            max_x = current_max_x
+                    else:
+                        current_max_x = child.rect[0] + child.rect[2]
+                        if current_max_x > max_x:
+                            max_x = current_max_x
+                    # 更新 max_y
+                    current_max_y = child.rect[1] + child.rect[3]
+                    if current_max_y > max_y:
+                        max_y = current_max_y
 
                 # 增加一些边距
                 margin = 10
