@@ -6,7 +6,7 @@ import configparser
 from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QComboBox, QPushButton, QHBoxLayout, 
                              QPlainTextEdit, QShortcut, QSizePolicy, QSplitter, QMenu, QMainWindow, QMessageBox)
 from PyQt5.QtGui import QPainter, QColor, QPen, QPolygonF, QPainterPath, QFontMetrics, QFont, QIcon, QKeySequence
-from PyQt5.QtCore import Qt, QSettings, QPointF, QEvent, pyqtSignal
+from PyQt5.QtCore import Qt, QSettings, QPointF, QEvent, pyqtSignal, QTimer
 from transitions.core import MachineError
 
 
@@ -89,6 +89,8 @@ class StateMachineWidget(QWidget):
         self.json_states = None
         self.json_transitions = None
 
+        self.timer = QTimer(self)
+
     def reload_config(self, config_name, STATES_CONFIG, TRANSITIONS_CONFIG_FOLDER):
 
         self.new_state_machine_signal.emit(config_name)
@@ -111,14 +113,16 @@ class StateMachineWidget(QWidget):
 
         self._layout_states()
 
-        self._adjust_all_states()
-
         initial_state_name = self._find_the_1st_initial_state(self.json_states)
         self.set_init_state(initial_state_name)
 
         if self.json_transitions is not None:
             # print(f'json_transitions={json_transitions}')
             self._connect_states(self.json_transitions)
+
+        self._adjust_all_states()
+
+        self.timer.singleShot(1, self._adjust_all_states)
 
     def set_init_state(self, state_name=None):
         self.state_machine_init_signal.emit(state_name)
@@ -424,8 +428,8 @@ class StateMachineWidget(QWidget):
                 painter.drawPolygon(QPointF(arrow_x, arrow_y), QPointF(arrow_x1, arrow_y1), QPointF(arrow_x2, arrow_y2))
 
                 # 3. trigger - condition name
-                text_x = int(arc_center_x)
-                text_y = int(arc_center_y - radius - 15)  # 上移 15 像素
+                text_x = round(arc_center_x) - round(get_name_width(triggers, self.scale_factor)/2)
+                text_y = round(arc_center_y - radius - 15)  # 上移 15 像素
 
                 self.draw_trigger_name(text_x, text_y, painter, source, key, triggers, conditions)
             else:
@@ -464,8 +468,8 @@ class StateMachineWidget(QWidget):
                 painter.drawPolygon(QPointF(end_x, end_y), QPointF(arrow_x1, arrow_y1), QPointF(arrow_x2, arrow_y2))
 
                 # 3. trigger and condition name
-                mid_x = int(path.pointAtPercent(0.5).x())
-                mid_y = int(path.pointAtPercent(0.5).y())
+                mid_x = round(path.pointAtPercent(0.5).x()) - round(get_name_width(triggers, self.scale_factor)/2)
+                mid_y = round(path.pointAtPercent(0.5).y())
 
                 self.draw_trigger_name(mid_x, mid_y - 15, painter, source, key, triggers, conditions)
 
@@ -694,17 +698,23 @@ class StateMachineWidget(QWidget):
                         min_y = child.rect[1]
                     # 更新 max_x
                     if child.children is None or len(child.children) == 0:
+                        
                         current_max_x = child.rect[0] + get_name_width(child.name, self.scale_factor) + rect_2_name_margin*2
                         if current_max_x > max_x:
                             max_x = current_max_x
+                        # 更新 max_y
+                        current_max_y = round(child.rect[1]) + round(20*self.scale_factor+rect_2_name_margin*2)
+                        if current_max_y > max_y:
+                            max_y = current_max_y
+
                     else:
                         current_max_x = child.rect[0] + child.rect[2]
                         if current_max_x > max_x:
                             max_x = current_max_x
-                    # 更新 max_y
-                    current_max_y = child.rect[1] + child.rect[3]
-                    if current_max_y > max_y:
-                        max_y = current_max_y
+                        # 更新 max_y
+                        current_max_y = child.rect[1] + child.rect[3]
+                        if current_max_y > max_y:
+                            max_y = current_max_y
 
                 # 增加一些边距
                 margin = 10
