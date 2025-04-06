@@ -5,7 +5,7 @@ import configparser
 
 from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QComboBox, QPushButton, QHBoxLayout, 
                              QPlainTextEdit, QShortcut, QSizePolicy, QSplitter, QMenu, QMainWindow, QMessageBox)
-from PyQt5.QtGui import QPainter, QColor, QPen, QPolygonF, QPainterPath, QFont, QIcon, QKeySequence
+from PyQt5.QtGui import QPainter, QColor, QPen, QPolygonF, QPainterPath, QFontMetrics, QFont, QIcon, QKeySequence
 from PyQt5.QtCore import Qt, QSettings, QPointF, QEvent, pyqtSignal
 from transitions.core import MachineError
 
@@ -302,19 +302,30 @@ class StateMachineWidget(QWidget):
             return 18
         painter.setBrush(state.color)
         return 12
-    
-    def set_trigger_style(self, painter, state, transition_key):
-        # if self.focus_state is state:
-        #     painter.setPen(QPen(Qt.GlobalColor.red, 1))
-        # else:
-        painter.setPen(QPen(Qt.GlobalColor.black, 1))
 
+    def draw_trigger_name(self, x, y, painter, state, transition_key, triggers, conditions):
+
+        is_focus = False
         if self.focus_transition is transition_key or self.focus_state is state:
+            is_focus = True
+
+        if is_focus is True:
             self.font.setBold(True)
+            painter.setPen(QPen(QColor('#030efa'), 1))
         else:
             self.font.setBold(False)
+            painter.setPen(QPen(Qt.GlobalColor.black, 1))
 
         painter.setFont(self.font)
+        painter.drawText(x, y, triggers)
+        self.merged_transitions[transition_key]['triggers_pos'] = (x, y)
+
+        if is_focus is True:
+            painter.setPen(QPen(QColor('#ff6833'), 1))
+            font_metrics = QFontMetrics(self.font)
+            font_height = font_metrics.height()
+            new_y = y + font_height
+            painter.drawText(x, new_y, conditions)
 
     def _draw_state(self, painter : QPainter, state):
         # 名字锚点
@@ -377,6 +388,7 @@ class StateMachineWidget(QWidget):
             source = data['source']
             dest = data['dest']
             triggers = "|".join(data['triggers'])
+            conditions = "|".join(data['conditions'])
 
             self.set_font_style(painter, source)
 
@@ -457,13 +469,10 @@ class StateMachineWidget(QWidget):
                 painter.drawPolygon(QPointF(arrow_x, arrow_y), QPointF(arrow_x1, arrow_y1), QPointF(arrow_x2, arrow_y2))
 
                 # 3. trigger - condition name
-                text_x = arc_center_x
-                text_y = arc_center_y - radius - 15  # 上移 15 像素
-                
-                self.set_trigger_style(painter, source, key)
+                text_x = int(arc_center_x)
+                text_y = int(arc_center_y - radius - 15)  # 上移 15 像素
 
-                painter.drawText(int(text_x), int(text_y), triggers)
-                self.merged_transitions[key]['triggers_pos'] = (text_x, text_y)
+                self.draw_trigger_name(text_x, text_y, painter, source, key, triggers, conditions)
             else:
                 # 1. 曲线 (贝塞尔曲线路径)
                 offset = 0
@@ -503,10 +512,7 @@ class StateMachineWidget(QWidget):
                 mid_x = int(path.pointAtPercent(0.5).x())
                 mid_y = int(path.pointAtPercent(0.5).y())
 
-                self.set_trigger_style(painter, source, key)
-
-                painter.drawText(mid_x, mid_y - 15, triggers)
-                self.merged_transitions[key]['triggers_pos'] = (mid_x, mid_y - 15)
+                self.draw_trigger_name(mid_x, mid_y - 15, painter, source, key, triggers, conditions)
 
 
     def wheelEvent(self, event):
@@ -546,7 +552,7 @@ class StateMachineWidget(QWidget):
         if state is not None:
             menu = QMenu(self)
 
-            copy_action = menu.addAction("Copy Name")
+            copy_action = menu.addAction("Copy")
             copy_action.triggered.connect(lambda b, name=state.name: self.copy_name_from_menu_slot(b, name))
 
             init_action = menu.addAction("Initial State")
@@ -557,17 +563,18 @@ class StateMachineWidget(QWidget):
         transition = self.above_the_transition(event.x(), event.y())
         if transition is not None:
             menu = QMenu(self)
-            _, triggers = transition
+            _, triggers, conditions_list = transition
 
-            copy_action = menu.addAction("Copy All Name")
+            copy_action = menu.addAction("Copy All")
             copy_action.triggered.connect(lambda b, name=triggers: self.copy_name_from_menu_slot(b, name))
 
             triggers_list = triggers.split('|')
-            for trigger in triggers_list:
+
+            for i, trigger in enumerate(triggers_list):
                 sub_menu = QMenu(trigger, self)
                 menu.addMenu(sub_menu)
                 
-                trigger_it_action = sub_menu.addAction('Trigger')
+                trigger_it_action = sub_menu.addAction(f'Trigger - {conditions_list[i]}()')
                 trigger_it_action.triggered.connect(lambda b, name=trigger: self.trigger_slot(b, name))
 
                 trigger_copy_action = sub_menu.addAction("Copy")
@@ -581,11 +588,11 @@ class StateMachineWidget(QWidget):
         clipboard.setText(name)
 
     def init_state_slot(self, b, name):
-        print(f'set_init_state name = {name}')
+        # print(f'set_init_state name = {name}')
         self.set_init_state(name)
 
     def trigger_slot(self, b, name):
-        print(f'trigger_slot name = {name}')
+        # print(f'trigger_slot name = {name}')
         self.trigger_transition(name)
 
     def inside_the_state(self, x, y):
@@ -609,49 +616,27 @@ class StateMachineWidget(QWidget):
             source = data['source']
             dest = data['dest']
             triggers = "|".join(data['triggers'])
+            conditions_list = data['conditions']
+            conditions = "|".join(conditions_list)
             triggers_pos = data['triggers_pos']
 
             # .__text__ 文字绘制方式是从左下角开始
             screen_anchor_x = triggers_pos[0] * self.scale_factor + self.offset_x
             screen_anchor_y = triggers_pos[1] * self.scale_factor + self.offset_y
             screen_anchor_height = 20 * self.scale_factor
-            screen_anchor_width = (len(triggers) + 5) * 8 * self.scale_factor
+            # screen_anchor_height_x2 = screen_anchor_height * 2
+            screen_anchor_width = max((len(triggers) + 5) * 8 * self.scale_factor, (len(conditions) + 5) * 8 * self.scale_factor)
 
             if (screen_anchor_x <= x <= screen_anchor_x + screen_anchor_width and
-                (screen_anchor_y - screen_anchor_height)<= y <= screen_anchor_y):
-                return key, triggers
+                (screen_anchor_y - screen_anchor_height)<= y <= screen_anchor_y + screen_anchor_height):
+                return key, triggers, conditions_list
 
         return None
 
-    # def mousePressEvent(self, event):
-    #     if event.button() == Qt.LeftButton:
-            
-    #         self.focus_state = None
-    #         self.focus_transition = None
-
-    #         state = self.inside_the_state(event.x(), event.y())
-    #         if state is not None:
-    #             state.dragging = True
-    #             self.focus_state = state
-    #             state.drag_start_x = event.x()
-    #             state.drag_start_y = event.y()
-
-    #         transition = self.above_the_transition(event.x(), event.y())
-    #         if transition is not None:
-    #             transition_key, triggers = transition
-    #             self.focus_transition = transition_key
-    #             print(f'key={transition_key[0].name}, {transition_key[1].name}')
-
-    #     elif event.button() == Qt.RightButton:
-    #         self.is_dragging_all = True
-    #         self.last_pos = event.pos()
-
-    #     self.update()
-
     def mousePressEvent(self, event):
-
-        self.focus_state = None
-        self.focus_transition = None
+        if event.button() == Qt.LeftButton:
+            self.focus_transition = None
+            self.focus_state = None
 
         state = self.inside_the_state(event.x(), event.y())
         if state is not None:
@@ -665,10 +650,9 @@ class StateMachineWidget(QWidget):
 
         transition = self.above_the_transition(event.x(), event.y())
         if transition is not None:
-            transition_key, triggers = transition
+            transition_key, triggers, connditions_list = transition
             self.focus_transition = transition_key
-            # print(f'key={transition_key[0].name}, {transition_key[1].name}')
-
+            # print(f'transition={transition_key, triggers, connditions_list}')
 
         if event.button() == Qt.RightButton:
             self.is_dragging_all = True
@@ -880,6 +864,7 @@ class StateMachineWidget(QWidget):
             source_name = transition['source']
             dest_name = transition['dest']
             trigger = transition['trigger']
+            conditions = transition['conditions']
 
             if len(dest_name) == 0:
                 dest_name = source_name
@@ -890,7 +875,8 @@ class StateMachineWidget(QWidget):
             if source_state and dest_state:
                 source_state.outgoing_transitions.append({
                     'trigger': trigger,
-                    'dest': dest_state
+                    'dest': dest_state,
+                    'conditions': conditions
                 })
 
         for state in self.states:
@@ -902,10 +888,12 @@ class StateMachineWidget(QWidget):
                     self.merged_transitions[key] = {
                         'source': source,
                         'dest': dest,
-                        'triggers': [transition['trigger']]
+                        'triggers': [transition['trigger']],
+                        'conditions':[transition['conditions']],
                     }
                 else:
                     self.merged_transitions[key]['triggers'].append(transition['trigger'])
+                    self.merged_transitions[key]['conditions'].append(transition['conditions'])
 
     def _find_state_by_name(self, name, current_states=None):
         if current_states is None:
