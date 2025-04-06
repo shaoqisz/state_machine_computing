@@ -542,39 +542,51 @@ class StateMachineWidget(QWidget):
 
 
     def contextMenuEvent(self, event):
-        name = None
-
         state = self.inside_the_state(event.x(), event.y())
         if state is not None:
-            name = state.name
+            menu = QMenu(self)
+
+            copy_action = menu.addAction("Copy Name")
+            copy_action.triggered.connect(lambda b, name=state.name: self.copy_name_from_menu_slot(b, name))
+
+            init_action = menu.addAction("Initial State")
+            init_action.triggered.connect(lambda b, name=self.get_full_path(state): self.init_state_slot(b, name))
+            menu.exec_(event.globalPos())
+            return
 
         transition = self.above_the_transition(event.x(), event.y())
         if transition is not None:
-            key, triggers = transition
-            name = triggers
-        
-        if name is not None or state is not None:
             menu = QMenu(self)
+            _, triggers = transition
 
-            if name is not None:
-                copy_action = menu.addAction("Copy")
-                copy_action.triggered.connect(lambda b, name=name: self.copy_state_name(b, name))
-                copy_action.setEnabled(True)
+            copy_action = menu.addAction("Copy All Name")
+            copy_action.triggered.connect(lambda b, name=triggers: self.copy_name_from_menu_slot(b, name))
 
-            if state is not None:
-                init_action = menu.addAction("Initial State")
-                init_action.triggered.connect(lambda b, name=self.get_full_path(state): self.init_state_slot(b, name))
-                init_action.setEnabled(True)
+            triggers_list = triggers.split('|')
+            for trigger in triggers_list:
+                sub_menu = QMenu(trigger, self)
+                menu.addMenu(sub_menu)
+                
+                trigger_it_action = sub_menu.addAction('Trigger')
+                trigger_it_action.triggered.connect(lambda b, name=trigger: self.trigger_slot(b, name))
+
+                trigger_copy_action = sub_menu.addAction("Copy")
+                trigger_copy_action.triggered.connect(lambda b, name=trigger: self.copy_name_from_menu_slot(b, name))
 
             menu.exec_(event.globalPos())
+            return
 
-    def copy_state_name(self, b, name):
+    def copy_name_from_menu_slot(self, b, name):
         clipboard = QApplication.clipboard()
         clipboard.setText(name)
 
     def init_state_slot(self, b, name):
         print(f'set_init_state name = {name}')
         self.set_init_state(name)
+
+    def trigger_slot(self, b, name):
+        print(f'trigger_slot name = {name}')
+        self.trigger_transition(name)
 
     def inside_the_state(self, x, y):
         for state in reversed(self.states):
@@ -611,26 +623,54 @@ class StateMachineWidget(QWidget):
 
         return None
 
-    def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton:
+    # def mousePressEvent(self, event):
+    #     if event.button() == Qt.LeftButton:
             
-            self.focus_state = None
-            self.focus_transition = None
+    #         self.focus_state = None
+    #         self.focus_transition = None
 
-            state = self.inside_the_state(event.x(), event.y())
-            if state is not None:
+    #         state = self.inside_the_state(event.x(), event.y())
+    #         if state is not None:
+    #             state.dragging = True
+    #             self.focus_state = state
+    #             state.drag_start_x = event.x()
+    #             state.drag_start_y = event.y()
+
+    #         transition = self.above_the_transition(event.x(), event.y())
+    #         if transition is not None:
+    #             transition_key, triggers = transition
+    #             self.focus_transition = transition_key
+    #             print(f'key={transition_key[0].name}, {transition_key[1].name}')
+
+    #     elif event.button() == Qt.RightButton:
+    #         self.is_dragging_all = True
+    #         self.last_pos = event.pos()
+
+    #     self.update()
+
+    def mousePressEvent(self, event):
+
+        self.focus_state = None
+        self.focus_transition = None
+
+        state = self.inside_the_state(event.x(), event.y())
+        if state is not None:
+
+            if event.button() == Qt.LeftButton:
                 state.dragging = True
-                self.focus_state = state
                 state.drag_start_x = event.x()
                 state.drag_start_y = event.y()
 
-            transition = self.above_the_transition(event.x(), event.y())
-            if transition is not None:
-                transition_key, triggers = transition
-                self.focus_transition = transition_key
-                print(f'key={transition_key[0].name}, {transition_key[1].name}')
+            self.focus_state = state
 
-        elif event.button() == Qt.RightButton:
+        transition = self.above_the_transition(event.x(), event.y())
+        if transition is not None:
+            transition_key, triggers = transition
+            self.focus_transition = transition_key
+            # print(f'key={transition_key[0].name}, {transition_key[1].name}')
+
+
+        if event.button() == Qt.RightButton:
             self.is_dragging_all = True
             self.last_pos = event.pos()
 
