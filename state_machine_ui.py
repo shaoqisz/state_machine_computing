@@ -235,12 +235,11 @@ class StateMachineWidget(QWidget):
         # 绘制转换连线
         self._draw_transitions(painter)
 
-    def set_font_style(self, painter, state):
+    def set_state_rect_style(self, painter, state):
         if self.focus_state is state:
-            self.font.setBold(True)
+            painter.setPen(QPen(QColor(0, 0, 0), 4))
         else:
-            self.font.setBold(False)
-        painter.setFont(self.font)
+            painter.setPen(QPen(QColor(0, 0, 0), 2))
 
     def set_line_style(self, painter, state, transition_key):
         if self.focus_state is state or self.focus_transition == transition_key:
@@ -292,10 +291,9 @@ class StateMachineWidget(QWidget):
         anchor_height = 20*self.scale_factor
         anchor_x, anchor_y, anchor_width, anchor_height = [round(anchor_x), round(anchor_y), round(anchor_width), round(anchor_height)]
         state.name_rect = [anchor_x, anchor_y, anchor_width, anchor_height]
-        self.set_font_style(painter, state)
 
         # 1. 绘制矩形
-        painter.setPen(QPen(QColor(0, 0, 0), 2))
+        self.set_state_rect_style(painter, state)
         if self.model.state == self.get_full_path(state):
             painter.setBrush(Qt.GlobalColor.yellow)
             if self.last_current_state is not state:
@@ -319,6 +317,7 @@ class StateMachineWidget(QWidget):
         painter.drawRect(*state.name_rect)
 
         # 3. 绘制状态名
+        painter.setFont(self.font)
         painter.setPen(QPen(QColor(255, 255, 255), 1))
         painter.drawText(anchor_x + 5, anchor_y + anchor_height - round(rect_2_name_margin/2*self.scale_factor), state.name)
 
@@ -347,8 +346,6 @@ class StateMachineWidget(QWidget):
             dest = data['dest']
             triggers = "|".join(data['triggers'])
             conditions = "|".join(data['conditions'])
-
-            self.set_font_style(painter, source)
 
             # 获取源状态的矩形信息和颜色
             source_x, source_y, source_w, source_h = source.name_rect
