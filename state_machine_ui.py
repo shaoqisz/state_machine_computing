@@ -15,9 +15,7 @@ from state_machine_core import Matter, CustomStateMachine
 
 from conditions_table_view import TableViewContainsSearchWidget
 from config_page import ConfigPage
-from colorful_text_edit import ColorfulTextEdit
-
-
+from colorful_text_edit import ColorfulTextEdit, FunctionType
 
 
 # 定义不同层级的拖动锚点颜色
@@ -46,7 +44,7 @@ class State:
 class StateMachineWidget(QWidget):
 
     trigger_name_signal = pyqtSignal(str)
-    transition_message_signal = pyqtSignal(str, bool)
+    condition_message_signal = pyqtSignal(str, bool)
     state_machine_init_signal = pyqtSignal(str)
     new_state_machine_signal = pyqtSignal(str)
 
@@ -311,7 +309,7 @@ class StateMachineWidget(QWidget):
 
         if is_focus is True:
             self.font.setBold(True)
-            painter.setPen(QPen(QColor('#030efa'), 1))
+            painter.setPen(QPen(FunctionType.trigger.color, 1))
         else:
             self.font.setBold(False)
             painter.setPen(QPen(Qt.GlobalColor.black, 1))
@@ -321,7 +319,7 @@ class StateMachineWidget(QWidget):
         self.merged_transitions[transition_key]['triggers_pos'] = (x, y)
 
         if is_focus is True:
-            painter.setPen(QPen(QColor('#ff6833'), 1))
+            painter.setPen(QPen(FunctionType.condition.color, 1))
             font_metrics = QFontMetrics(self.font)
             font_height = font_metrics.height()
             new_y = y + font_height
@@ -958,7 +956,7 @@ class StateMachineWidget(QWidget):
         return new_function
 
     def setup_conditions_allowed_slot(self, conditions, allowed):        
-        new_func = self.create_new_function(conditions, bool(allowed.lower() == 'yes'), self.transition_message_signal)
+        new_func = self.create_new_function(conditions, bool(allowed.lower() == 'yes'), self.condition_message_signal)
         if conditions is not None:
             # print(f'set Matter.{conditions} always return ({allowed})')
             setattr(Matter, conditions, new_func)
@@ -987,7 +985,7 @@ class MainWindow(QMainWindow):
         # state machine
         self.state_machine = StateMachineWidget(icon=self.windowIcon())
         self.state_machine.trigger_name_signal.connect(self.trigger_name_slot)
-        self.state_machine.transition_message_signal.connect(self.transition_message_slot)
+        self.state_machine.condition_message_signal.connect(self.condition_message_slot)
         self.state_machine.state_machine_init_signal.connect(self.state_machine_init_slot)
         self.state_machine.new_state_machine_signal.connect(self.new_state_machine_slot)
         self.state_machine.enter_state_changed_signal.connect(self.enter_state_slot)
@@ -1067,13 +1065,14 @@ class MainWindow(QMainWindow):
                                   function_name=trigger, 
                                   function_params=None, 
                                   return_code=None,
-                                  function_type=ColorfulTextEdit.FunctionType.trigger)
+                                  function_type=FunctionType.trigger)
 
-    def transition_message_slot(self, function_name, return_code):
+    def condition_message_slot(self, function_name, return_code):
         self.text_edit.append_log(object_name='sm',
                                   function_name=function_name, 
                                   function_params=None, 
-                                  return_code=return_code)
+                                  return_code=return_code,
+                                  function_type=FunctionType.condition)
         
     def state_machine_init_slot(self, state_name):
         self.text_edit.append_log(object_name='sm',
@@ -1089,14 +1088,14 @@ class MainWindow(QMainWindow):
                                   function_name=f'{name}.entry', 
                                   function_params=None, 
                                   return_code=None,
-                                  function_type=ColorfulTextEdit.FunctionType.transition)
+                                  function_type=FunctionType.state_change)
 
     def leave_state_slot(self, name):
         self.text_edit.append_log(object_name='sm',
                                   function_name=f'{name}.exit', 
                                   function_params=None, 
                                   return_code=None,
-                                  function_type=ColorfulTextEdit.FunctionType.transition)
+                                  function_type=FunctionType.state_change)
         
 
     def _save_conditions_allowed(self):

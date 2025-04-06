@@ -9,7 +9,7 @@ import importlib
 # QT5
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtWidgets import QItemDelegate, QMenu, QGridLayout, QApplication, QWidget, QTableView, QSizePolicy, QTableView, QFrame, QRadioButton, QComboBox, QLineEdit, QButtonGroup, QPushButton, QCheckBox, QHeaderView, QSplitter, QAction, QVBoxLayout, QMessageBox, QFileDialog, QStyledItemDelegate, QStyle, QHBoxLayout, QLabel
-from PyQt5.QtGui import QStandardItemModel, QStandardItem, QCursor, QIcon, QPixmap, QFont
+from PyQt5.QtGui import QStandardItemModel, QStandardItem, QCursor, QIcon, QPixmap, QFont, QColor
 from PyQt5.QtCore import Qt, pyqtSignal, QObject, QTimer, QTextStream, QFile, QIODevice, QItemSelectionModel, QThread, QSortFilterProxyModel, QModelIndex, QRegularExpression
 import csv
 import re
@@ -19,6 +19,8 @@ import warnings
 import time
 import six
 import threading
+
+from colorful_text_edit import FunctionType
 
 
 class ComboBoxDelegate(QItemDelegate):
@@ -87,6 +89,26 @@ class RecursiveFilterProxyModel(QSortFilterProxyModel):
 
         return super().filterAcceptsRow(source_row, source_parent)
 
+    def data(self, index, role=Qt.DisplayRole):
+        if role == Qt.DisplayRole:
+            return super().data(index, role)
+
+        elif role == Qt.ForegroundRole:
+            if index.column() == 0:    # source
+                return FunctionType.state_change.color
+            elif index.column() == 1:  # Trigger
+                return FunctionType.trigger.color
+            elif index.column() == 2:  # Condition
+                return FunctionType.condition.color
+            elif index.column() == 3:  # Dest
+                return FunctionType.state_change.color
+            elif index.column() == 4:  # Allowed
+                text = super().data(index, Qt.DisplayRole)
+                if text == 'Yes':
+                    return QColor('#2ca20f')
+                return QColor(255, 0, 0) 
+
+        return None
 
 class MyTableView(QTableView):
     condition_allowed_changed = pyqtSignal(str, str)
@@ -135,7 +157,7 @@ class MyTableView(QTableView):
 
     def __setupTableView(self):
         self.table_model.clear()
-        database_table_header = ['Source', 'Trigger', 'Condition', 'Dest', 'Condition Allowed']
+        database_table_header = ['Source', 'Trigger', 'Condition', 'Dest', 'Allowed']
         self.table_model.setHorizontalHeaderLabels(database_table_header)
 
         self.setColumnWidth(0, 400)

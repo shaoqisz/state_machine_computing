@@ -5,17 +5,35 @@ from PyQt5.QtGui import QPainter, QColor, QPen, QPolygonF, QPainterPath, QFont, 
 from PyQt5.QtCore import Qt, QSettings, QPointF, QEvent, pyqtSignal
 
 import datetime
+from enum import Enum 
+
 
 TIMESTAMP_FORMAT = "%Y-%m-%d_%H:%M:%S.%f"
 
+class FunctionType(Enum):
+    condition      = 0
+    trigger         = 1
+    state_change    = 2
+    other           = 3
 
+    @property
+    def color(self):
+        return QColor(self.color_name)
+
+    @property
+    def color_name(self):
+        if self.name == 'condition':
+            return '#ff6833'
+        
+        elif self.name == 'trigger':
+            return '#030efa'
+        
+        elif self.name == 'state_change':
+            return '#0099c6'
+
+        return '#c6b100'
 
 class ColorfulTextEdit(QPlainTextEdit):
-    class FunctionType:
-        regular     = 0
-        transition  = 1
-        trigger     = 2
-
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -27,7 +45,7 @@ class ColorfulTextEdit(QPlainTextEdit):
                                   return_code=None,
                                   left_variable=left_variable)
 
-    def append_log(self, object_name, function_name, function_params, return_code, left_variable=None, function_type=FunctionType.regular):
+    def append_log(self, object_name, function_name, function_params, return_code, left_variable=None, function_type:FunctionType = FunctionType.other):
         now = datetime.datetime.now()
         timestamp = now.strftime(TIMESTAMP_FORMAT)
 
@@ -37,12 +55,7 @@ class ColorfulTextEdit(QPlainTextEdit):
         if object_name is not None:
             color_object_name = f'<span style="color: #302a36;">{object_name}.</span>'
         
-        if function_type == ColorfulTextEdit.FunctionType.regular:
-            color_func_name = f'<span style="color: #ff6833;">{function_name}</span>'
-        elif function_type == ColorfulTextEdit.FunctionType.transition:
-            color_func_name = f'<span style="color: #c6b100;">{function_name}</span>'
-        elif function_type == ColorfulTextEdit.FunctionType.trigger:
-            color_func_name = f'<span style="color: #030efa;">{function_name}</span>'
+        color_func_name = f'<span style="color: {function_type.color_name};">{function_name}</span>'
 
         color_function_params = None
         if function_params is not None:
