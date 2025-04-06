@@ -11,9 +11,9 @@ from enum import Enum
 TIMESTAMP_FORMAT = "%Y-%m-%d_%H:%M:%S.%f"
 
 class FunctionType(Enum):
-    condition      = 0
+    condition       = 0
     trigger         = 1
-    state_change    = 2
+    state           = 2
     other           = 3
 
     @property
@@ -28,7 +28,7 @@ class FunctionType(Enum):
         elif self.name == 'trigger':
             return '#030efa'
         
-        elif self.name == 'state_change':
+        elif self.name == 'state':
             return '#0099c6'
 
         return '#c6b100'

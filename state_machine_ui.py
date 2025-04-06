@@ -243,7 +243,7 @@ class StateMachineWidget(QWidget):
         painter.setFont(self.font)
 
     def set_line_style(self, painter, state, transition_key):
-        if self.focus_state is state or self.focus_transition is transition_key:
+        if self.focus_state is state or self.focus_transition == transition_key:
             pen = QPen(Qt.GlobalColor.black, 4)
         else:
             pen = QPen(state.color, 2)
@@ -260,9 +260,8 @@ class StateMachineWidget(QWidget):
         return 12
 
     def draw_trigger_name(self, x, y, painter, state, transition_key, triggers, conditions):
-
         is_focus = False
-        if self.focus_transition is transition_key or self.focus_state is state:
+        if self.focus_transition == transition_key or self.focus_state is state:
             is_focus = True
 
         if is_focus is True:
@@ -948,11 +947,48 @@ class StateMachineWidget(QWidget):
 
         return new_function
 
-    def setup_conditions_allowed_slot(self, conditions, allowed):        
+    def setup_conditions_allowed_slot(self, conditions, allowed):
         new_func = self.create_new_function(conditions, bool(allowed.lower() == 'yes'), self.condition_message_signal)
         if conditions is not None:
             # print(f'set Matter.{conditions} always return ({allowed})')
             setattr(Matter, conditions, new_func)
+
+    def focus_slot(self, function_type, focus_name):
+        if function_type == FunctionType.state:
+            state_name = focus_name[0]
+            for state in self.states:
+                full_path = self.get_full_path(state)
+                if full_path == state_name:
+                    self.focus_state = state
+                    self.focus_transition = None
+                    self.update()
+                    return
+
+        elif function_type == FunctionType.trigger:
+            source_name = focus_name[0]
+            dest_name = focus_name[1]
+
+            print(f'source_name={source_name} dest_name={dest_name}')
+
+            source = None
+            dest = None
+
+            for state in self.states:
+                full_path = self.get_full_path(state)
+                if full_path == source_name:
+                    source = state
+                    for state in self.states:
+                        full_path = self.get_full_path(state)
+                        if full_path == dest_name:
+                            dest = state
+                            break
+                    break
+            if source is not None and dest is not None:
+                self.focus_transition = (source, dest)
+                self.focus_state = None
+                self.update()
+                return
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -1099,6 +1135,7 @@ class MainWindow(QMainWindow):
         self.config_page.config_changed_signal.connect(self.reload_config)
         # self.table_view_w_search.init_state_signal.connect(self.init_state_slot)
         self.table_view_w_search.table_view.condition_allowed_changed.connect(self.state_machine.setup_conditions_allowed_slot)
+        self.table_view_w_search.table_view.focus_signal.connect(self.state_machine.focus_slot)
 
         self.add_separator_btn.clicked.connect(lambda:self.text_edit.add_separator())
         self.clear_btn.clicked.connect(lambda: self.text_edit.clear())
@@ -1131,14 +1168,14 @@ class MainWindow(QMainWindow):
                                   function_name=f'{name}.entry', 
                                   function_params=None, 
                                   return_code=None,
-                                  function_type=FunctionType.state_change)
+                                  function_type=FunctionType.state)
 
     def leave_state_slot(self, name):
         self.text_edit.append_log(object_name='sm',
                                   function_name=f'{name}.exit', 
                                   function_params=None, 
                                   return_code=None,
-                                  function_type=FunctionType.state_change)
+                                  function_type=FunctionType.state)
         
 
     def _save_conditions_allowed(self):

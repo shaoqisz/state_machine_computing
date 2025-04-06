@@ -92,13 +92,13 @@ class RecursiveFilterProxyModel(QSortFilterProxyModel):
     def data(self, index, role=Qt.DisplayRole):
         if role == Qt.ForegroundRole:
             if index.column() == 0:    # source
-                return FunctionType.state_change.color
+                return FunctionType.state.color
             elif index.column() == 1:  # Trigger
                 return FunctionType.trigger.color
             elif index.column() == 2:  # Condition
                 return FunctionType.condition.color
             elif index.column() == 3:  # Dest
-                return FunctionType.state_change.color
+                return FunctionType.state.color
             elif index.column() == 4:  # Allowed
                 text = super().data(index, Qt.DisplayRole)
                 if text == 'Yes':
@@ -111,6 +111,7 @@ class RecursiveFilterProxyModel(QSortFilterProxyModel):
 
 class MyTableView(QTableView):
     condition_allowed_changed = pyqtSignal(str, str)
+    focus_signal = pyqtSignal(FunctionType, list)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -141,6 +142,11 @@ class MyTableView(QTableView):
         copy_action = menu.addAction("Copy")
         copy_action.triggered.connect(lambda: self.copy_item_text(index, column))
         
+        if column != 4:
+            focus_action = menu.addAction("Focus")
+            focus_action.triggered.connect(lambda: self.focus_item_text(index, column))
+
+
         # 4. 显示菜单（可根据列禁用某些操作）
         if column == 0:  # 第一列禁用某些操作示例
             copy_action.setEnabled(True)
@@ -153,6 +159,25 @@ class MyTableView(QTableView):
 
         clipboard = QApplication.clipboard()
         clipboard.setText(item_text)
+
+    def focus_item_text(self, index, column):
+        source_index = self.proxy_model.mapToSource(index)
+        current_text = self.table_model.itemData(source_index)[0]
+
+        row_data = self.get_selected_row()
+        if column == 1 or column == 2:
+            # print(f'focus_signal {column, current_text} row_data={row_data}')
+            if row_data[3] == '-':
+                self.focus_signal.emit(FunctionType.trigger, [row_data[0], row_data[0]])
+            else:
+                self.focus_signal.emit(FunctionType.trigger, [row_data[0], row_data[3]])
+
+        if column == 0 or column == 3:
+            # print(f'focus_signal {column, current_text} row_data={row_data}')
+            if current_text == '-':
+                self.focus_signal.emit(FunctionType.state, [row_data[0]])
+            else:
+                self.focus_signal.emit(FunctionType.state, [current_text])
 
     def __setupTableView(self):
         self.table_model.clear()
