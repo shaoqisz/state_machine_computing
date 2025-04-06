@@ -42,13 +42,13 @@ class ComboBoxDelegate(QItemDelegate):
         return editor
 
     def setEditorData(self, editor, index):
-        # print('setEditorData')
         text = index.model().data(index, Qt.EditRole)
         editor.setCurrentText(text)
+        # print(f'setEditorData text={text}')
 
     def setModelData(self, editor, model, index):
-        # print('setModelData')
         model.setData(index, editor.currentText(), Qt.EditRole)
+        # print(f'setModelData text={editor.currentText()}')
 
     def updateEditorGeometry(self, editor, option, index):
         # print('updateEditorGeometry')
@@ -90,10 +90,7 @@ class RecursiveFilterProxyModel(QSortFilterProxyModel):
         return super().filterAcceptsRow(source_row, source_parent)
 
     def data(self, index, role=Qt.DisplayRole):
-        if role == Qt.DisplayRole:
-            return super().data(index, role)
-
-        elif role == Qt.ForegroundRole:
+        if role == Qt.ForegroundRole:
             if index.column() == 0:    # source
                 return FunctionType.state_change.color
             elif index.column() == 1:  # Trigger
@@ -107,6 +104,8 @@ class RecursiveFilterProxyModel(QSortFilterProxyModel):
                 if text == 'Yes':
                     return QColor('#2ca20f')
                 return QColor(255, 0, 0) 
+        else:
+            return super().data(index, role)
 
         return None
 
@@ -182,18 +181,20 @@ class MyTableView(QTableView):
         delegate.value_changed.connect(self.on_delegate_value_changed)
 
     def on_delegate_value_changed(self, row, text):
+
         proxy_index = self.proxy_model.index(row, 2) # condition
         source_index = self.proxy_model.mapToSource(proxy_index)
         if source_index.isValid():
             condition = self.table_model.itemData(source_index)[0]
+            self.condition_allowed_changed.emit(condition, text)
+            print(f'emit condition_item={condition} allowed={text}')
+
             # print(f'condition={condition} return {text}')
-            for row in range(self.table_model.rowCount()):
-                condition_item = self.table_model.item(row, 2)
-                allowed_item = self.table_model.item(row, 4)
+            for _row in range(self.table_model.rowCount()):
+                condition_item = self.table_model.item(_row, 2)
+                allowed_item = self.table_model.item(_row, 4)
                 if condition_item and condition_item and condition == condition_item.text() and allowed_item.text() != text:
                     allowed_item.setText(text)
-                    # print(f'on_delegate_value_changed condition_item={condition_item.text()} allowed={allowed_item.text()}')
-                    self.condition_allowed_changed.emit(condition_item.text(), allowed_item.text())
 
     def set_transitions(self, json_transitions):
         self.clear_transitions()
