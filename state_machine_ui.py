@@ -65,6 +65,9 @@ class StateMachineWidget(QWidget):
         self.warning_error_msg_box.setIcon(QMessageBox.Warning)
         self.warning_error_msg_box.setStandardButtons(QMessageBox.Ok)
         
+        self.yellow_state = None
+        self.gray_state = None
+
         self.focus_state = None
         self.focus_transition = None
         self.last_current_state = None
@@ -226,6 +229,8 @@ class StateMachineWidget(QWidget):
         painter.scale(self.scale_factor, self.scale_factor)
 
         self.font.setPointSizeF(10*self.scale_factor)
+        self.font.setBold(False)
+        painter.setFont(self.font)
 
         # 找到根状态
         root_states = [state for state in self.states if state.parent is None]
@@ -281,6 +286,14 @@ class StateMachineWidget(QWidget):
             new_y = y + font_height
             painter.drawText(x, new_y, conditions)
 
+    def set_current_last_state(self, current, last):
+        self.yellow_state = current
+        self.gray_state = last
+
+        self.focus_transition = (last, current)
+        
+        self.update()
+
     def _draw_state(self, painter : QPainter, state):
         # 0. 计算名字锚点长度
         rect_2_name_margin = 10
@@ -295,12 +308,24 @@ class StateMachineWidget(QWidget):
         # 1. 绘制矩形
         self.set_state_rect_style(painter, state)
         if self.model.state == self.get_full_path(state):
-            painter.setBrush(Qt.GlobalColor.yellow)
             if self.last_current_state is not state:
+                timer = QTimer()
+
                 if self.last_current_state is not None:
                     self.leave_state_changed_signal.emit(self.get_full_path(self.last_current_state))
+
+                timer.singleShot(150, lambda current=None, last=self.last_current_state : self.set_current_last_state(current, last))
+                timer.singleShot(400, lambda current=state, last=self.last_current_state : self.set_current_last_state(current, last))
+
                 self.last_current_state = state
                 self.enter_state_changed_signal.emit(self.model.state)
+                timer.singleShot(650, lambda current=state, last=None : self.set_current_last_state(current, last))
+
+
+        if state == self.yellow_state:
+            painter.setBrush(Qt.GlobalColor.yellow)
+        elif state == self.gray_state:
+            painter.setBrush(Qt.GlobalColor.gray)
         else:
             painter.setBrush(Qt.GlobalColor.white)
 
@@ -317,7 +342,6 @@ class StateMachineWidget(QWidget):
         painter.drawRect(*state.name_rect)
 
         # 3. 绘制状态名
-        painter.setFont(self.font)
         painter.setPen(QPen(QColor(255, 255, 255), 1))
         painter.drawText(anchor_x + 5, anchor_y + anchor_height - round(rect_2_name_margin/2*self.scale_factor), state.name)
 
@@ -561,6 +585,11 @@ class StateMachineWidget(QWidget):
 
     def trigger_slot(self, b, name):
         # print(f'trigger_slot name = {name}')
+
+        # to clear all the focus
+        self.focus_transition = None
+        self.focus_state = None
+
         self.trigger_transition(name)
 
     def inside_the_state(self, x, y):
