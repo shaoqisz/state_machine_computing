@@ -75,6 +75,7 @@ class StateMachineWidget(QWidget):
         self.last_current_state = None
 
         self.is_dragging_all = False
+        self.skip_context_menu_event_once = True
         self.scale_factor = 1.0
         self.min_scale = 0.1
         self.max_scale = 5.0
@@ -528,6 +529,10 @@ class StateMachineWidget(QWidget):
 
 
     def contextMenuEvent(self, event):
+        if self.skip_context_menu_event_once:
+            self.skip_context_menu_event_once = False
+            return
+
         state = self.inside_the_state(event.x(), event.y())
         if state is not None:
             menu = QMenu(self)
@@ -666,6 +671,9 @@ class StateMachineWidget(QWidget):
             self.offset_x += dx
             self.offset_y += dy
             self.last_pos = event.pos()
+
+            self.skip_context_menu_event_once = True
+
             self.update()
         else:
             for state in self.states:
