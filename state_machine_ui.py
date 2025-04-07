@@ -60,6 +60,8 @@ class StateMachineWidget(QWidget):
 
         self.icon = icon
 
+        self.rect_2_name_margin = 10
+
         self.warning_error_msg_box = QMessageBox()
         self.warning_error_msg_box.setWindowIcon(self.icon)
         self.warning_error_msg_box.setIcon(QMessageBox.Warning)
@@ -296,11 +298,10 @@ class StateMachineWidget(QWidget):
 
     def _draw_state(self, painter : QPainter, state):
         # 0. 计算名字锚点长度
-        rect_2_name_margin = 10
         x, y, w, h = state.rect
         anchor_width = get_name_width(state.name, self.scale_factor) # (len(state.name) + 5) * 8 * self.scale_factor
-        anchor_x = x + rect_2_name_margin
-        anchor_y = y + rect_2_name_margin
+        anchor_x = x + self.rect_2_name_margin
+        anchor_y = y + self.rect_2_name_margin
         anchor_height = 20*self.scale_factor
         anchor_x, anchor_y, anchor_width, anchor_height = [round(anchor_x), round(anchor_y), round(anchor_width), round(anchor_height)]
         state.name_rect = [anchor_x, anchor_y, anchor_width, anchor_height]
@@ -331,7 +332,7 @@ class StateMachineWidget(QWidget):
 
         radius = 10
         if state.children is None or len(state.children) == 0:
-            painter.drawRoundedRect(round(x), round(y), round(anchor_width+rect_2_name_margin*2), round(anchor_height+rect_2_name_margin*2), radius, radius)
+            painter.drawRoundedRect(round(x), round(y), round(anchor_width+self.rect_2_name_margin*2), round(anchor_height+self.rect_2_name_margin*2), radius, radius)
         else:
             painter.drawRoundedRect(round(x), round(y), round(w), round(h), radius, radius)
         
@@ -343,7 +344,7 @@ class StateMachineWidget(QWidget):
 
         # 3. 绘制状态名
         painter.setPen(QPen(QColor(255, 255, 255), 1))
-        painter.drawText(anchor_x + 5, anchor_y + anchor_height - round(rect_2_name_margin/2*self.scale_factor), state.name)
+        painter.drawText(anchor_x + 5, anchor_y + anchor_height - round(self.rect_2_name_margin/2*self.scale_factor), state.name)
 
         # 4. 递归绘制子状态
         for child in state.children:
@@ -602,8 +603,8 @@ class StateMachineWidget(QWidget):
             screen_anchor_width = anchor_width * self.scale_factor
             screen_anchor_height = anchor_height * self.scale_factor
 
-            if (screen_anchor_x <= x <= screen_anchor_x + screen_anchor_width and
-                screen_anchor_y <= y <= screen_anchor_y + screen_anchor_height):
+            if ((screen_anchor_x - self.rect_2_name_margin) <= x <= screen_anchor_x + self.rect_2_name_margin + screen_anchor_width and
+                (screen_anchor_y - self.rect_2_name_margin) <= y <= screen_anchor_y + self.rect_2_name_margin + screen_anchor_height):
                 return state
 
         return None
@@ -700,9 +701,7 @@ class StateMachineWidget(QWidget):
             self._move_children(child, dx, dy)
 
     def _adjust_parent(self, state):
-        # print(f'{__name__}')
-        rect_2_name_margin = 10
-        
+        # print(f'{__name__}')        
         parent = state.parent
         while parent:
             all_children = self._get_all_children(parent)
@@ -724,11 +723,11 @@ class StateMachineWidget(QWidget):
                     # 更新 max_x
                     if child.children is None or len(child.children) == 0:
                         
-                        current_max_x = child.rect[0] + get_name_width(child.name, self.scale_factor) + rect_2_name_margin*2
+                        current_max_x = child.rect[0] + get_name_width(child.name, self.scale_factor) + self.rect_2_name_margin*2
                         if current_max_x > max_x:
                             max_x = current_max_x
                         # 更新 max_y
-                        current_max_y = round(child.rect[1]) + round(20*self.scale_factor+rect_2_name_margin*2)
+                        current_max_y = round(child.rect[1]) + round(20*self.scale_factor+self.rect_2_name_margin*2)
                         if current_max_y > max_y:
                             max_y = current_max_y
 
