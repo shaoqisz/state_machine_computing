@@ -30,9 +30,8 @@ LEVEL_COLORS = [
 ]
 
 
-def get_name_width(name, scale_factor):
-    return (len(name) + 5) * 8 * scale_factor
-
+# def get_name_width(name, scale_factor):
+#     return (len(name)) * 10 * scale_factor
 class State:
     def __init__(self, name, children=None, parent=None):
         self.name = name
@@ -294,8 +293,7 @@ class StateMachineWidget(QWidget):
 
         if is_focus is True:
             painter.setPen(QPen(FunctionType.condition.color, 1))
-            font_metrics = QFontMetrics(self.font)
-            font_height = font_metrics.height()
+            font_height = self.get_text_height()
             new_y = y + font_height
             painter.drawText(x, new_y, conditions)
 
@@ -310,10 +308,10 @@ class StateMachineWidget(QWidget):
     def _draw_state(self, painter : QPainter, state):
         # 0. 计算名字锚点长度
         x, y, w, h = state.rect
-        anchor_width = get_name_width(state.name, self.scale_factor) # (len(state.name) + 5) * 8 * self.scale_factor
+        anchor_width = self.get_text_width(state.name) + self.rect_2_name_margin
         anchor_x = x + self.rect_2_name_margin
         anchor_y = y + self.rect_2_name_margin
-        anchor_height = 20*self.scale_factor
+        anchor_height = self.get_text_height()
         anchor_x, anchor_y, anchor_width, anchor_height = [round(anchor_x), round(anchor_y), round(anchor_width), round(anchor_height)]
         state.name_rect = [anchor_x, anchor_y, anchor_width, anchor_height]
 
@@ -460,7 +458,7 @@ class StateMachineWidget(QWidget):
                 painter.drawPolygon(QPointF(arrow_x, arrow_y), QPointF(arrow_x1, arrow_y1), QPointF(arrow_x2, arrow_y2))
 
                 # 3. trigger - condition name
-                text_x = round(arc_center_x) - round(get_name_width(triggers, self.scale_factor)/2)
+                text_x = round(arc_center_x) - round(self.get_text_width(triggers) / 2)
                 text_y = round(arc_center_y - radius - 15)  # 上移 15 像素
 
                 self.draw_trigger_name(text_x, text_y, painter, source, key, triggers, conditions)
@@ -500,7 +498,7 @@ class StateMachineWidget(QWidget):
                 painter.drawPolygon(QPointF(end_x, end_y), QPointF(arrow_x1, arrow_y1), QPointF(arrow_x2, arrow_y2))
 
                 # 3. trigger and condition name
-                mid_x = round(path.pointAtPercent(0.5).x()) - round(get_name_width(triggers, self.scale_factor)/2)
+                mid_x = round(path.pointAtPercent(0.5).x()) - round(self.get_text_width(triggers) / 2)
                 mid_y = round(path.pointAtPercent(0.5).y())
 
                 self.draw_trigger_name(mid_x, mid_y - 15, painter, source, key, triggers, conditions)
@@ -636,17 +634,10 @@ class StateMachineWidget(QWidget):
             # .__text__ 文字绘制方式是从左下角开始
             screen_anchor_x = triggers_pos[0] * self.scale_factor + self.offset_x
             screen_anchor_y = triggers_pos[1] * self.scale_factor + self.offset_y
-            screen_anchor_height = 20 * self.scale_factor
 
-            
-            # consider the conditions:
-            # screen_anchor_width = max(get_name_width(triggers, self.scale_factor), get_name_width(conditions, self.scale_factor))
-            # if (screen_anchor_x <= x <= screen_anchor_x + screen_anchor_width and
-            #     (screen_anchor_y - screen_anchor_height)<= y <= screen_anchor_y + screen_anchor_height):
-            #     return key, triggers, conditions_list
-
+            screen_anchor_height = self.get_text_height() * self.scale_factor
             # not consider the conditions:
-            screen_anchor_width = get_name_width(triggers, self.scale_factor)
+            screen_anchor_width = self.get_text_width(triggers) * self.scale_factor
             if (screen_anchor_x <= x <= screen_anchor_x + screen_anchor_width and
                 (screen_anchor_y - screen_anchor_height)<= y <= screen_anchor_y):
                 return key, triggers, conditions_list
@@ -746,12 +737,11 @@ class StateMachineWidget(QWidget):
                         min_y = child.rect[1]
                     # 更新 max_x
                     if child.children is None or len(child.children) == 0:
-                        
-                        current_max_x = child.rect[0] + get_name_width(child.name, self.scale_factor) + self.rect_2_name_margin*2
+                        current_max_x = child.rect[0] + self.get_text_width(child.name) + self.rect_2_name_margin*3
                         if current_max_x > max_x:
                             max_x = current_max_x
                         # 更新 max_y
-                        current_max_y = round(child.rect[1]) + round(20*self.scale_factor+self.rect_2_name_margin*2)
+                        current_max_y = round(child.rect[1]) + round(self.get_text_height()+self.rect_2_name_margin*2)
                         if current_max_y > max_y:
                             max_y = current_max_y
 
@@ -1038,6 +1028,19 @@ class StateMachineWidget(QWidget):
                 self.update()
                 return
 
+    def get_text_width(self, text):
+        new_font = QFont(self.font.family(), self.font.pointSize(), self.font.weight(), self.font.italic())
+        new_font.setBold(False)
+        font_metrics = QFontMetrics(new_font)
+        text_length = font_metrics.horizontalAdvance(text)
+        return text_length
+
+    def get_text_height(self):
+        new_font = QFont(self.font.family(), self.font.pointSize(), self.font.weight(), self.font.italic())
+        new_font.setBold(False)
+        font_metrics = QFontMetrics(new_font)
+        font_height = font_metrics.height()
+        return font_height
 
 class MainWindow(QMainWindow):
     def __init__(self):
