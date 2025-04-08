@@ -131,6 +131,12 @@ class TextEditSearch(QWidget):
         self.setStyleSheet('background: black; color: white; border: 1px solid gray;')
         # self.search_widget.setStyleSheet("background-color: black; border: 1px solid gray;")
 
+    def set_theme(self, theme):
+        if theme == Theme.black:
+            self.set_black_theme()
+        elif theme == Theme.white:
+            self.set_white_theme()
+
     def on_search_widget_mouse_press(self, event):
         if event.button() == Qt.LeftButton:
             self.offset = event.pos()

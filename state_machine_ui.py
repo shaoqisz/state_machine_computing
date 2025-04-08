@@ -1302,6 +1302,9 @@ class MainWindow(QMainWindow):
         # geometry
         self.settings.setValue("geometry", self.saveGeometry())
 
+        # theme
+        self.settings.setValue("theme", int(self.text_edit_search.current_theme))
+
         # splitter
         self.settings.setValue(self.vert_spliter.objectName(), self.vert_spliter.saveState())
         self.settings.setValue(self.hor_spliter.objectName(), self.hor_spliter.saveState())
@@ -1314,6 +1317,10 @@ class MainWindow(QMainWindow):
         geometry = self.settings.value("geometry")
         if geometry:
             self.restoreGeometry(geometry)
+
+        theme = self.settings.value("theme")
+        if theme:
+            self.text_edit_search.set_theme(theme)
 
         # splitter
         splitter_state = self.settings.value(self.vert_spliter.objectName())
