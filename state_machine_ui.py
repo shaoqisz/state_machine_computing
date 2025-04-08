@@ -1070,11 +1070,8 @@ class MainWindow(QMainWindow):
 
         # table view
         self.table_view_w_search = TableViewContainsSearchWidget()
-        self.table_view_w_search.table_view.setStyleSheet("""
-            QTableView {
-                font-size: 12px;
-            }
-        """)
+        self.table_view_w_search.table_view.set_white_theme()
+        
         if self.state_machine.json_transitions is not None:
             self.table_view_w_search.set_transitions(self.config_page.config_name_combobox.currentText(), self.state_machine.json_transitions)
             for row, transition in enumerate(self.state_machine.json_transitions):

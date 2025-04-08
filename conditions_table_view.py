@@ -122,6 +122,60 @@ class MyTableView(QTableView):
 
         self.__setupTableView()
 
+    def set_white_theme(self):
+        self.setStyleSheet("""
+            QTableView {
+                font-size: 12px;
+            }
+            QHeaderView::section:horizontal {
+                background-color: white;
+                color: #333333;
+                border-bottom: 1px solid #878787; /* 加强水平表头底部边框，作为分割线 */
+                border-right: 1px solid #878787; /* 设置水平表头的竖分隔线为1px */
+            }
+            QHeaderView::section:vertical {
+                background-color: white;
+                color: #333333;
+                border-right: 1px solid #878787;
+            }
+            QTableCornerButton::section {
+                background-color: white;
+                border: 1px solid #878787;
+            }
+        """)
+
+    def set_black_theme(self):
+        self.setStyleSheet("""
+            QTableView {
+                background-color: black;
+                gridline-color: gray;
+                font-size: 12px;
+            }
+            QHeaderView::section {
+                background-color: black;
+                border: 1px solid gray;
+            }
+            QTableView::item {
+                background-color: black;
+            }
+            QTableView::item:selected {
+                background-color: gray;
+            }
+            QHeaderView::section:horizontal {
+                background-color: black;
+                border-bottom: 1px solid gray;
+            }
+            QHeaderView::section:vertical {
+                background-color: black;
+                border-right: 1px solid gray;
+            }
+            QTableCornerButton::section {
+                background-color: black;
+                border: 1px solid gray;
+            }
+            """)
+        
+
     def initUI(self):
         self.table_model = QStandardItemModel(self)
         self.proxy_model = RecursiveFilterProxyModel()
@@ -408,42 +462,6 @@ class TableViewContainsSearchWidget(QWidget):
         self.table_view.clear_transitions()
 
     def setup_ui(self, table_view):
-        #     QTableView {
-        #         background-color: black;
-        #         color: #ADD8E6;
-        #         gridline-color: gray;
-        #         font-size: 12px;
-        #     }
-        #     QHeaderView::section {
-        #         background-color: black;
-        #         color: #ADD8E6;
-        #         border: 1px solid gray;
-        #     }
-        #     QTableView::item {
-        #         background-color: black;
-        #         color: #ADD8E6;
-        #     }
-        #     QTableView::item:selected {
-        #         background-color: gray;
-        #         color: white;
-        #     }
-        #     QHeaderView::section:horizontal {
-        #         background-color: black;
-        #         color: green;
-        #         border-bottom: 1px solid gray;
-        #     }
-        #     QHeaderView::section:vertical {
-        #         background-color: black;
-        #         color: green;
-        #         border-right: 1px solid gray;
-        #     }
-        #     QTableCornerButton::section {
-        #         background-color: black;
-        #         color: #ADD8E6;
-        #         border: 1px solid gray;
-        #     }
-        # """)
-
         self.table_view = table_view
         if self.table_view is None:
             self.table_view = MyTableView()
