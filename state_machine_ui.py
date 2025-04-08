@@ -16,6 +16,7 @@ from state_machine_core import Matter, CustomStateMachine
 from conditions_table_view import TableViewContainsSearchWidget
 from config_page import ConfigPage
 from colorful_text_edit import ColorfulTextEdit, FunctionType
+from text_edit_search import TextEditSearch
 
 
 # 定义不同层级的拖动锚点颜色
@@ -1042,7 +1043,8 @@ class MainWindow(QMainWindow):
         self.config_page = ConfigPage(icon=self.windowIcon())
 
         # text edit
-        self.text_edit = ColorfulTextEdit()
+        self.text_edit = ColorfulTextEdit(self)
+        self.text_edit_search = TextEditSearch(self.text_edit)
 
         # state machine
         self.state_machine = StateMachineWidget(icon=self.windowIcon())
@@ -1128,7 +1130,7 @@ class MainWindow(QMainWindow):
 
 
 
-        self.right_widget.layout().addWidget(self.text_edit)
+        self.right_widget.layout().addWidget(self.text_edit_search)
         self.right_widget.layout().addWidget(self.text_edit_bottom_widget)
         self.right_widget.layout().setContentsMargins(0,0,0,0)
         self.right_widget.layout().setSpacing(5)
