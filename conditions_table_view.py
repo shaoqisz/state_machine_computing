@@ -123,27 +123,31 @@ class MyTableView(QTableView):
         self.__setupTableView()
 
     def set_white_theme(self):
+        # self.setStyleSheet("""
+        #     QTableView {
+        #         font-size: 12px;
+        #     }
+        #     QHeaderView::section:horizontal {
+        #         background-color: white;
+        #         color: #333333;
+        #         border-bottom: 1px solid #878787; /* 加强水平表头底部边框，作为分割线 */
+        #         border-right: 1px solid #878787; /* 设置水平表头的竖分隔线为1px */
+        #     }
+        #     QHeaderView::section:vertical {
+        #         background-color: white;
+        #         color: #333333;
+        #         border-right: 1px solid #878787;
+        #     }
+        #     QTableCornerButton::section {
+        #         background-color: white;
+        #         border: 1px solid #878787;
+        #     }
+        # """)
         self.setStyleSheet("""
             QTableView {
                 font-size: 12px;
             }
-            QHeaderView::section:horizontal {
-                background-color: white;
-                color: #333333;
-                border-bottom: 1px solid #878787; /* 加强水平表头底部边框，作为分割线 */
-                border-right: 1px solid #878787; /* 设置水平表头的竖分隔线为1px */
-            }
-            QHeaderView::section:vertical {
-                background-color: white;
-                color: #333333;
-                border-right: 1px solid #878787;
-            }
-            QTableCornerButton::section {
-                background-color: white;
-                border: 1px solid #878787;
-            }
         """)
-
     def set_black_theme(self):
         self.setStyleSheet("""
             QTableView {

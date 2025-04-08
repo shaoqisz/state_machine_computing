@@ -61,10 +61,11 @@ class ColorfulTextEdit(QPlainTextEdit):
 
         color_ts = f'<span style="color: #2ca20f;">[{timestamp}]</span>'
 
-        # color_object_name = ''
-        # if object_name is not None:
-        #     color_object_name = f'<span style="color: #302a36;">{object_name}.</span>'
-        
+        color_object_name = ''
+        if object_name is not None:
+            # color_object_name = f'<span style="color: #302a36;">{object_name}.</span>'
+            color_object_name = f'{object_name}.'
+
         color_func_name = f'<span style="color: {function_type.color_name};">{function_name}</span>'
 
         color_function_params = None
@@ -85,6 +86,6 @@ class ColorfulTextEdit(QPlainTextEdit):
         if left_variable is not None:
             color_left_variable = f'{left_variable} ='
 
-        text = f"{color_ts} {color_left_variable} {object_name}.{color_func_name}{color_function_params} {color_return_code}"
+        text = f"{color_ts} {color_left_variable} {color_object_name}{color_func_name}{color_function_params} {color_return_code}"
 
         self.appendHtml(text)
