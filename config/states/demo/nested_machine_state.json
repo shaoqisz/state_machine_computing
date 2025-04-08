@@ -1,0 +1,25 @@
+[
+    {
+        "name": "NestedStateMachine",
+        "children": [
+            {
+                "name": "State1",
+                "children": [
+                    "Node1",
+                    "Node2"
+                ],
+                "initial": "Node1"
+            },
+            {
+                "name": "State2",
+                "children": [
+                    "Node1",
+                    "Node2",
+                    "Node3"
+                ],
+                "initial": "Node1"
+            }
+        ],
+        "initial": "State1"
+    }
+]

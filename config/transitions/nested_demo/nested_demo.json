@@ -1,0 +1,8 @@
+[
+{"trigger": "trigger1",  "conditions": "s1n1_s1n1_trans",  "source": "NestedStateMachine_State1_Node1",  "dest": "NestedStateMachine_State1_Node1"},
+{"trigger": "trigger1",  "conditions": "s1n1_s1n2_trans",  "source": "NestedStateMachine_State1_Node1",  "dest": "NestedStateMachine_State1_Node2"},
+{"trigger": "trigger1",  "conditions": "s1n2_s2n1_trans",    "source": "NestedStateMachine_State1_Node2",  "dest": "NestedStateMachine_State2_Node1"},
+{"trigger": "trigger2",  "conditions": "s2n1_s2n2_trans",  "source": "NestedStateMachine_State2_Node1",  "dest": "NestedStateMachine_State2_Node2"},
+{"trigger": "trigger2",  "conditions": "ssn1_ssn2_trans",  "source": "NestedStateMachine_State2_Node2",  "dest": "NestedStateMachine_State2_Node3"},
+{"trigger": "trigger2",  "conditions": "ssn1_s1_trans",    "source": "NestedStateMachine_State2_Node3",  "dest": "NestedStateMachine_State1"}
+]
