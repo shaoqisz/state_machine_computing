@@ -95,8 +95,6 @@ class StateMachineWidget(QWidget):
         self.json_states = None
         self.json_transitions = None
 
-        self.timer = QTimer(self)
-
     def reload_config(self, config_name, STATES_CONFIG, TRANSITIONS_CONFIG_FOLDER):
         try:
             self.new_state_machine_signal.emit(config_name)
@@ -126,9 +124,8 @@ class StateMachineWidget(QWidget):
                 # print(f'json_transitions={json_transitions}')
                 self._connect_states(self.json_transitions)
 
-            self._adjust_all_states()
+            # self.timer.singleShot(100, self._adjust_all_states)
 
-            self.timer.singleShot(1, self._adjust_all_states)
         except Exception as e:
             self.warning_error_msg_box.setText(f'{e}')
             self.warning_error_msg_box.setWindowTitle('Error')
@@ -1189,6 +1186,9 @@ class MainWindow(QMainWindow):
 
         self.add_separator_btn.clicked.connect(lambda:self.text_edit.add_separator())
         self.clear_btn.clicked.connect(lambda: self.text_edit.clear())
+
+        timer = QTimer()
+        timer.singleShot(100, self.state_machine._adjust_all_states)
 
     def trigger_name_slot(self, trigger):
         self.text_edit.append_log(object_name='sm',
