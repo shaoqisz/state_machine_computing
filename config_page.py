@@ -78,12 +78,16 @@ class ConfigPage(QWidget):
     def select_main_resource(self):
         file_path, _ = QFileDialog.getOpenFileName(self, "Select", "", "Json File (*.json)")
         if file_path:
-            self.main_resource_input.setText(file_path)
+            base_path = os.getcwd()
+            relative_path = os.path.relpath(file_path, base_path)
+            self.main_resource_input.setText(relative_path)
 
     def select_secondary_resource(self):
         dir_path = QFileDialog.getExistingDirectory(self, "Select")
         if dir_path:
-            self.secondary_resource_input.setText(dir_path)
+            base_path = os.getcwd()
+            relative_path = os.path.relpath(dir_path, base_path)
+            self.secondary_resource_input.setText(relative_path)
 
     def add_new_config(self):
         config_name, ok = QInputDialog.getText(self, "New Config", "Input the config name:")
