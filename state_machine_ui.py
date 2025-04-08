@@ -1119,7 +1119,7 @@ class MainWindow(QMainWindow):
         self.text_edit_bottom_widget.layout().addWidget(text_edit_bottom_widget_left)
         self.text_edit_bottom_widget.layout().addWidget(text_edit_bottom_widget_right)
 
-        self.text_edit_bottom_widget.layout().setContentsMargins(10,0,10,0)
+        self.text_edit_bottom_widget.layout().setContentsMargins(0,0,0,0)
         self.text_edit_bottom_widget.layout().setSpacing(5)
 
 
@@ -1168,11 +1168,11 @@ class MainWindow(QMainWindow):
 
         # menu
         menubar = self.menuBar()
-        settings_menu = QMenu("&Edit", self)
-        settings_action = settings_menu.addAction("Configure")
+        file_menu = QMenu("&File", self)
+        settings_action = file_menu.addAction("Configure")
         settings_action.setShortcut('Ctrl+G')
         settings_action.triggered.connect(self.open_config_page)
-        menubar.addMenu(settings_menu)
+        menubar.addMenu(file_menu)
 
         # load settings
         self.load_settings()

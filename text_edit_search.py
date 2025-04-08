@@ -61,6 +61,8 @@ class TextEditSearch(QWidget):
         stacked_layout.addWidget(self.text_edit)
         stacked_layout.addWidget(self.search_widget)
         stacked_layout.setCurrentWidget(self.text_edit)
+        stacked_layout.setContentsMargins(0,0,0,0)
+        stacked_layout.setSpacing(0)
 
         # 绑定搜索框按钮的点击事件
         self.prev_button.clicked.connect(self.prev_search)
@@ -75,8 +77,8 @@ class TextEditSearch(QWidget):
         main_layout = QVBoxLayout(self)
         main_layout.addLayout(stacked_layout)
 
-        main_layout.setContentsMargins(5, 5, 5, 5)
-        main_layout.setSpacing(5)
+        main_layout.setContentsMargins(0,0,0,0)
+        main_layout.setSpacing(0)
 
         self.setLayout(main_layout)
         self.setWindowTitle('Search Text Edit')
@@ -100,7 +102,7 @@ class TextEditSearch(QWidget):
 
         menu.addSeparator()
 
-        sub_menu = QMenu('Theme Change', self)
+        sub_menu = QMenu('Theme', self)
         menu.addMenu(sub_menu)
         
         white_theme_action = sub_menu.addAction("White")
