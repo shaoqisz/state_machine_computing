@@ -99,37 +99,42 @@ class StateMachineWidget(QWidget):
         self.timer = QTimer(self)
 
     def reload_config(self, config_name, STATES_CONFIG, TRANSITIONS_CONFIG_FOLDER):
+        try:
+            self.new_state_machine_signal.emit(config_name)
 
-        self.new_state_machine_signal.emit(config_name)
+            self.STATES_CONFIG = STATES_CONFIG
+            self.TRANSITIONS_CONFIG_FOLDER = TRANSITIONS_CONFIG_FOLDER
+            self.font.setPointSize(10)
 
-        self.STATES_CONFIG = STATES_CONFIG
-        self.TRANSITIONS_CONFIG_FOLDER = TRANSITIONS_CONFIG_FOLDER
-        self.font.setPointSize(10)
+            self.merged_transitions = {}
 
-        self.merged_transitions = {}
+            self.states = []
+            
+            self.json_states = self._load_states()
+            self.json_transitions = self._load_transitions()
 
-        self.states = []
-        
-        self.json_states = self._load_states()
-        self.json_transitions = self._load_transitions()
+            if self.json_states is not None:
+                self._build_states(self.json_states)
 
-        if self.json_states is not None:
-            self._build_states(self.json_states)
+            self._load_state_positions()
 
-        self._load_state_positions()
+            self._layout_states()
 
-        self._layout_states()
+            initial_state_name = self._find_the_1st_initial_state(self.json_states)
+            self.set_init_state(initial_state_name)
 
-        initial_state_name = self._find_the_1st_initial_state(self.json_states)
-        self.set_init_state(initial_state_name)
+            if self.json_transitions is not None:
+                # print(f'json_transitions={json_transitions}')
+                self._connect_states(self.json_transitions)
 
-        if self.json_transitions is not None:
-            # print(f'json_transitions={json_transitions}')
-            self._connect_states(self.json_transitions)
+            self._adjust_all_states()
 
-        self._adjust_all_states()
+            self.timer.singleShot(1, self._adjust_all_states)
+        except Exception as e:
+            self.warning_error_msg_box.setText(f'{e}')
+            self.warning_error_msg_box.setWindowTitle('Error')
+            self.warning_error_msg_box.exec()
 
-        self.timer.singleShot(1, self._adjust_all_states)
 
     def set_init_state(self, state_name=None):
         self.state_machine_init_signal.emit(state_name)
@@ -190,7 +195,11 @@ class StateMachineWidget(QWidget):
     def _build_states(self, state_list, parent=None):
         for state_data in state_list:
             if isinstance(state_data, dict):
-                name = state_data['name']
+                name:str = state_data['name']
+
+                if '_' in name:
+                    raise Exception(f'Found the underline in the state name `{name}`, which is not allowed.')
+                
                 children = state_data.get('children', [])
                 state = State(name, parent=parent)
                 self._build_states(children, state)
@@ -230,8 +239,8 @@ class StateMachineWidget(QWidget):
         # painter.drawRect(0, 0, self.width(), self.height())
 
         painter.translate(self.offset_x, self.offset_y)
-        painter.scale(self.scale_factor, self.scale_factor)
 
+        painter.scale(self.scale_factor, self.scale_factor)
         self.font.setPointSizeF(10*self.scale_factor)
         self.font.setBold(False)
         painter.setFont(self.font)
