@@ -637,12 +637,18 @@ class StateMachineWidget(QWidget):
             screen_anchor_x = triggers_pos[0] * self.scale_factor + self.offset_x
             screen_anchor_y = triggers_pos[1] * self.scale_factor + self.offset_y
             screen_anchor_height = 20 * self.scale_factor
-            # screen_anchor_height_x2 = screen_anchor_height * 2
-            # screen_anchor_width = max((len(triggers) + 5) * 8 * self.scale_factor, (len(conditions) + 5) * 8 * self.scale_factor)
-            screen_anchor_width = max(get_name_width(triggers, self.scale_factor), get_name_width(conditions, self.scale_factor))
 
+            
+            # consider the conditions:
+            # screen_anchor_width = max(get_name_width(triggers, self.scale_factor), get_name_width(conditions, self.scale_factor))
+            # if (screen_anchor_x <= x <= screen_anchor_x + screen_anchor_width and
+            #     (screen_anchor_y - screen_anchor_height)<= y <= screen_anchor_y + screen_anchor_height):
+            #     return key, triggers, conditions_list
+
+            # not consider the conditions:
+            screen_anchor_width = get_name_width(triggers, self.scale_factor)
             if (screen_anchor_x <= x <= screen_anchor_x + screen_anchor_width and
-                (screen_anchor_y - screen_anchor_height)<= y <= screen_anchor_y + screen_anchor_height):
+                (screen_anchor_y - screen_anchor_height)<= y <= screen_anchor_y):
                 return key, triggers, conditions_list
 
         return None
@@ -1071,7 +1077,7 @@ class MainWindow(QMainWindow):
         # table view
         self.table_view_w_search = TableViewContainsSearchWidget()
         self.table_view_w_search.table_view.set_white_theme()
-        
+
         if self.state_machine.json_transitions is not None:
             self.table_view_w_search.set_transitions(self.config_page.config_name_combobox.currentText(), self.state_machine.json_transitions)
             for row, transition in enumerate(self.state_machine.json_transitions):
