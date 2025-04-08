@@ -1,6 +1,6 @@
 
 from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QComboBox, QPushButton, QHBoxLayout, 
-                             QPlainTextEdit, QShortcut, QSizePolicy, QSplitter, QMenu, QMainWindow, QMessageBox)
+                             QPlainTextEdit, QShortcut, QSizePolicy, QSplitter, QMenu, QMainWindow, QMessageBox, QAction)
 from PyQt5.QtGui import QPainter, QColor, QPen, QPolygonF, QPainterPath, QFont, QIcon, QKeySequence
 from PyQt5.QtCore import Qt, QSettings, QPointF, QEvent, pyqtSignal
 
@@ -26,7 +26,8 @@ class FunctionType(Enum):
             return '#ff6833'
         
         elif self.name == 'trigger':
-            return '#030efa'
+            # return '#030efa'
+            return '#0e58f6'
         
         elif self.name == 'state':
             return '#0099c6'
@@ -37,6 +38,11 @@ class ColorfulTextEdit(QPlainTextEdit):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setReadOnly(True)
+
+    def contextMenuEvent(self, event):
+        self.parent().contextMenuEvent(event)
+
+
 
     def append_log_new_machine(self, machine_name, left_variable):
         self.appendHtml('<span style="color: #2ca20f; font-weight: bold;"> --------------------------- system restarted --------------------------- </span>')
@@ -55,9 +61,9 @@ class ColorfulTextEdit(QPlainTextEdit):
 
         color_ts = f'<span style="color: #2ca20f;">[{timestamp}]</span>'
 
-        color_object_name = ''
-        if object_name is not None:
-            color_object_name = f'<span style="color: #302a36;">{object_name}.</span>'
+        # color_object_name = ''
+        # if object_name is not None:
+        #     color_object_name = f'<span style="color: #302a36;">{object_name}.</span>'
         
         color_func_name = f'<span style="color: {function_type.color_name};">{function_name}</span>'
 
@@ -79,6 +85,6 @@ class ColorfulTextEdit(QPlainTextEdit):
         if left_variable is not None:
             color_left_variable = f'{left_variable} ='
 
-        text = f"{color_ts} {color_left_variable} {color_object_name}{color_func_name}{color_function_params} {color_return_code}"
+        text = f"{color_ts} {color_left_variable} {object_name}.{color_func_name}{color_function_params} {color_return_code}"
 
         self.appendHtml(text)

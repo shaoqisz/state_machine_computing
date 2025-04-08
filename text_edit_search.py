@@ -1,7 +1,12 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPlainTextEdit, QHBoxLayout, QLineEdit, QPushButton, QStackedLayout, QLabel
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPlainTextEdit, QHBoxLayout, QLineEdit, QPushButton, QStackedLayout, QLabel, QAction, QMenu
 from PyQt5.QtCore import Qt, QSize, QTimer, pyqtSignal
 from PyQt5.QtGui import QTextDocument
+
+
+class Theme:
+    white = 0
+    black = 1
 
 
 class TextEditSearch(QWidget):
@@ -47,7 +52,6 @@ class TextEditSearch(QWidget):
 
         self.search_widget.setLayout(self.search_layout)
         self.search_widget.setVisible(False)
-        self.search_widget.setStyleSheet("background-color: white; border: 1px solid gray;")
 
         self.search_widget_max_size = QSize(300, 30)
         self.search_widget.setMaximumSize(self.search_widget_max_size)
@@ -76,6 +80,54 @@ class TextEditSearch(QWidget):
 
         self.setLayout(main_layout)
         self.setWindowTitle('Search Text Edit')
+
+        self.set_white_theme()
+
+    def contextMenuEvent(self, event):
+        menu = QMenu(self)
+
+        copy_action = QAction("Copy", self)
+        copy_action.setShortcut('Ctrl+C')
+
+        copy_action.triggered.connect(self.text_edit.copy)
+        menu.addAction(copy_action)
+
+        paste_action = QAction("SelectAll", self)
+        paste_action.setShortcut('Ctrl+A')
+        paste_action.triggered.connect(self.text_edit.selectAll)
+
+        menu.addAction(paste_action)
+
+        menu.addSeparator()
+
+        sub_menu = QMenu('Theme Change', self)
+        menu.addMenu(sub_menu)
+        
+        white_theme_action = sub_menu.addAction("White")
+        white_theme_action.setCheckable(True)
+        white_theme_action.triggered.connect(self.set_white_theme)
+
+        black_theme_action = sub_menu.addAction("Black")
+        black_theme_action.setCheckable(True)
+
+        black_theme_action.triggered.connect(self.set_black_theme)
+
+        if self.current_theme == Theme.white:
+            white_theme_action.setChecked(True)
+        elif self.current_theme == Theme.black:
+            black_theme_action.setChecked(True)
+
+        menu.exec_(event.globalPos())
+
+    def set_white_theme(self):
+        self.current_theme = Theme.white
+        self.setStyleSheet('background: white; color: black; border: 1px solid gray;')
+        # self.search_widget.setStyleSheet("background-color: white; border: 1px solid gray;")
+
+    def set_black_theme(self):
+        self.current_theme = Theme.black
+        self.setStyleSheet('background: black; color: white; border: 1px solid gray;')
+        # self.search_widget.setStyleSheet("background-color: black; border: 1px solid gray;")
 
     def on_search_widget_mouse_press(self, event):
         if event.button() == Qt.LeftButton:
