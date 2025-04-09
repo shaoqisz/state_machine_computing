@@ -77,6 +77,8 @@ class StateMachineWidget(QWidget):
         self.warning_error_msg_box.setIcon(QMessageBox.Warning)
         self.warning_error_msg_box.setStandardButtons(QMessageBox.Ok)
 
+        self.animation_enabled = False
+
         self.transitions_timer = QTimer()
         self.transitions_timer_is_running = False
         
@@ -107,6 +109,10 @@ class StateMachineWidget(QWidget):
         
         self.json_states = None
         self.json_transitions = None
+
+    def set_animation_changed(self, animation_enabled):
+        # print(f'animation_enabled={animation_enabled}')
+        self.animation_enabled = animation_enabled
 
     def reload_config(self, config_name, STATES_CONFIG, TRANSITIONS_CONFIG_FOLDER):
         try:
@@ -373,10 +379,16 @@ class StateMachineWidget(QWidget):
                 result = any(_conditions == conditions for _conditions in conditions_list)
                 if result is True:                    
                     self.set_start_state(_source)
-                    self.transitions_timer.singleShot(150,   lambda current=None,  last=_source:  self.set_current_last_state(current, last))
-                    self.transitions_timer.singleShot(400,   lambda current=_dest, last=_source:  self.set_current_last_state(current, last))
-                    self.transitions_timer.singleShot(650,   lambda current=_dest, last=None:     self.set_current_last_state(current, last))
-                    self.transitions_timer.singleShot(850 ,  lambda current=_dest, last=None:     self.update_final_current_state())
+
+                    if self.animation_enabled is True:
+                        self.transitions_timer.singleShot(150,   lambda current=None,  last=_source:  self.set_current_last_state(current, last))
+                        self.transitions_timer.singleShot(400,   lambda current=_dest, last=_source:  self.set_current_last_state(current, last))
+                        self.transitions_timer.singleShot(650,   lambda current=_dest, last=None:     self.set_current_last_state(current, last))
+                        self.transitions_timer.singleShot(850 ,  lambda current=_dest, last=None:     self.update_final_current_state())
+                    else:
+                        self.set_current_last_state(current=_dest, last=None)
+                        self.transitions_timer.singleShot(1 ,  lambda:self.update_final_current_state())
+
                     self.transitions_timer_is_running = True
 
     def _draw_state(self, painter : QPainter, state):
@@ -1146,6 +1158,8 @@ class MainWindow(QMainWindow):
         self.state_machine.reload_config(self.config_page.config_name_combobox.currentText(),
                                          self.config_page.main_resource_input.text(), 
                                          self.config_page.secondary_resource_input.text())
+        
+        self.state_machine.set_animation_changed(bool(self.config_page.animation_options.currentIndex()))
 
         # table view
         self.table_view_w_search = TableViewContainsSearchWidget()
@@ -1253,6 +1267,8 @@ class MainWindow(QMainWindow):
         # connections
         self.table_view_w_search.trigger_signal.connect(self.trigger_slot)
         self.config_page.config_changed_signal.connect(self.reload_config)
+        self.config_page.animation_changed_signal.connect(self.state_machine.set_animation_changed)
+
         # self.table_view_w_search.init_state_signal.connect(self.init_state_slot)
         self.table_view_w_search.table_view.condition_allowed_changed.connect(self.state_machine.setup_conditions_allowed_slot)
         self.table_view_w_search.table_view.focus_signal.connect(self.state_machine.focus_slot)
@@ -1271,16 +1287,15 @@ class MainWindow(QMainWindow):
                                   function_type=FunctionType.trigger)
 
     def condition_message_slot(self, source_name, dest_name, function_name, return_code):
-        if return_code is True:
-            # print(f'hightlight source_name={source_name} dest_name={dest_name} conditions={function_name}')
-            self.state_machine.set_source_conditions_focus(source_name, dest_name, function_name)
-
         self.text_edit.append_log(object_name='sm',
                                   function_name=function_name, 
                                   function_params=None, 
                                   return_code=return_code,
                                   function_type=FunctionType.condition)
-        
+
+        if return_code is True:
+            self.state_machine.set_source_conditions_focus(source_name, dest_name, function_name)
+
     def state_machine_init_slot(self, state_name):
         self.text_edit.append_log(object_name='sm',
                                   function_name='set_initial_state', 

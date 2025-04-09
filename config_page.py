@@ -1,13 +1,15 @@
 import sys
 import json
 import os
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QMessageBox, QInputDialog, QPushButton, QLineEdit, QFileDialog, QMainWindow, QMenuBar, QMenu, QFormLayout, QGridLayout
+from PyQt5.QtWidgets import QApplication, QWidget, QCheckBox, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QMessageBox, QInputDialog, QPushButton, QLineEdit, QFileDialog, QMainWindow, QMenuBar, QMenu, QFormLayout, QGridLayout
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import pyqtSignal, Qt
 
 
 class ConfigPage(QWidget):
     config_changed_signal = pyqtSignal()
+    animation_changed_signal = pyqtSignal(bool)
+
     def __init__(self, icon=None):
         super().__init__()
         
@@ -23,57 +25,76 @@ class ConfigPage(QWidget):
             self.setWindowIcon(self.icon)
 
         main_layout = QVBoxLayout()
-            
+
         layout = QGridLayout()
 
         # 主资源文件配置
         self.main_resource_label = QLabel("State Machine File")
         self.main_resource_input = QLineEdit()
-        self.main_resource_button = QPushButton("Select File")
-        self.main_resource_button.clicked.connect(self.select_main_resource)
+        self.main_resource_button = QPushButton("Select")
 
-        layout.addWidget(self.main_resource_label, 0, 1)
-        layout.addWidget(self.main_resource_input, 0, 2)
-        layout.addWidget(self.main_resource_button, 0, 3)
+        row = 0
+        column = 0
+        self.config_name_combobox = QComboBox()
 
-        # 辅资源路径配置
+        layout.addWidget(QLabel('Name'), row, 0)
+        column += 1
+        layout.addWidget(self.config_name_combobox, row, column)
+        column += 1
+
+        two_buttons_widget = QWidget()
+        two_buttons_widget.setLayout(QHBoxLayout())
+        self.delete_config_button = QPushButton("Delete")
+        self.add_config_button = QPushButton("New")
+        two_buttons_widget.layout().addWidget(self.delete_config_button)
+        two_buttons_widget.layout().addWidget(self.add_config_button)
+        layout.addWidget(two_buttons_widget, row, column)
+        two_buttons_widget.setMaximumWidth(100)
+        two_buttons_widget.layout().setContentsMargins(0,0,0,0)
+        two_buttons_widget.layout().setSpacing(4)
+
+        row += 1
+        column = 0
+        layout.addWidget(self.main_resource_label, row, column)
+        column += 1
+        layout.addWidget(self.main_resource_input, row, column)
+        column += 1
+        layout.addWidget(self.main_resource_button, row, column)
+        column += 1
+
+        row += 1
+        column = 0
         self.secondary_resource_label = QLabel("Transitions Directory")
         self.secondary_resource_input = QLineEdit()
-        self.secondary_resource_button = QPushButton("Select Directory")
+        self.secondary_resource_button = QPushButton("Select")
 
-        layout.addWidget(self.secondary_resource_label, 1, 1)
-        layout.addWidget(self.secondary_resource_input, 1, 2)
-        layout.addWidget(self.secondary_resource_button, 1, 3)
+        layout.addWidget(self.secondary_resource_label, row, column)
+        column += 1
+        layout.addWidget(self.secondary_resource_input, row, column)
+        column += 1
+        layout.addWidget(self.secondary_resource_button, row, column)
+        column += 1
 
-        h_layout = QHBoxLayout()
-        # 配置名称选择框
-        self.config_name_combobox = QComboBox()
-        self.config_name_combobox.currentIndexChanged.connect(self.on_config_selected)
-        h_layout.addWidget(self.config_name_combobox)
-
-        # 新增配置按钮
-        self.add_config_button = QPushButton("New Config")
-        self.add_config_button.clicked.connect(self.add_new_config)
-        h_layout.addWidget(self.add_config_button)
-
-        # 删除配置按钮
-        self.delete_config_button = QPushButton("Delete Config")
-        self.delete_config_button.clicked.connect(self.delete_current_config)
-        h_layout.addWidget(self.delete_config_button)
-
-        # 保存按钮
-        self.save_button = QPushButton("Apply")
-        self.save_button.clicked.connect(self.save_config)
-        h_layout.addWidget(self.save_button)
+        row += 1
+        column = 0
+        self.animation_options = QComboBox()
+        self.animation_options.addItems(['No', 'Yes'])
+        layout.addWidget(QLabel('Transition Animation'), row, column)
+        column += 1
+        layout.addWidget(self.animation_options, row, column)
 
         main_layout.addLayout(layout)
-        main_layout.addLayout(h_layout)
 
         self.setLayout(main_layout)
 
         self.resize(700, 150)
 
+        self.main_resource_button.clicked.connect(self.select_main_resource)
+        self.add_config_button.clicked.connect(self.add_new_config)
+        self.delete_config_button.clicked.connect(self.delete_current_config)
+        self.config_name_combobox.currentIndexChanged.connect(self.on_config_selected)
         self.secondary_resource_button.clicked.connect(self.select_secondary_resource)
+        self.animation_options.currentIndexChanged.connect(lambda enabled=bool(self.animation_options.currentIndex()): self.animation_changed_signal.emit(enabled))
 
     def select_main_resource(self):
         file_path, _ = QFileDialog.getOpenFileName(self, "Select", "", "Json File (*.json)")
@@ -118,6 +139,7 @@ class ConfigPage(QWidget):
                     self.secondary_resource_input.setText("")
 
     def save_config(self):
+        # print(f'save_config')
         current_config_name = self.config_name_combobox.currentText()
         if current_config_name:
             self.configs[current_config_name] = {
@@ -126,14 +148,11 @@ class ConfigPage(QWidget):
             }
             data = {
                 "configs": self.configs,
-                "current_config": current_config_name
+                "current_config": current_config_name,
+                "animation_enabled": self.animation_options.currentIndex()
             }
             with open("config.json", "w") as f:
                 json.dump(data, f, indent=4)
-
-            self.config_changed_signal.emit()
-
-        self.hide()
 
     def load_config(self):
         if os.path.exists("config.json"):
@@ -141,8 +160,14 @@ class ConfigPage(QWidget):
                 data = json.load(f)
                 self.configs = data.get("configs", {})
                 current_config = data.get("current_config")
+                animation_enabled = data.get("animation_enabled")
+            
+            if animation_enabled:
+                self.animation_options.setCurrentIndex(animation_enabled)
+            
             for config_name in self.configs.keys():
                 self.config_name_combobox.addItem(config_name)
+
             if current_config and current_config in self.configs:
                 self.config_name_combobox.setCurrentText(current_config)
                 self.load_config_to_ui()
@@ -162,9 +187,15 @@ class ConfigPage(QWidget):
     def on_config_selected(self):
         self.load_config_to_ui()
 
+        self.config_changed_signal.emit()
+
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
             self.hide()
+
+    def closeEvent(self, a0):
+        self.save_config()
+        return super().closeEvent(a0)
 
 class MainWindow(QMainWindow):
     def __init__(self):
