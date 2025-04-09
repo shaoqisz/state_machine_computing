@@ -1,14 +1,22 @@
 import sys
 import json
 import os
+from enum import Enum 
+
 from PyQt5.QtWidgets import QApplication, QWidget, QCheckBox, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QMessageBox, QInputDialog, QPushButton, QLineEdit, QFileDialog, QMainWindow, QMenuBar, QMenu, QFormLayout, QGridLayout
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import pyqtSignal, Qt
 
 
+
+class Theme(Enum):
+    white = 0
+    black = 1
+
 class ConfigPage(QWidget):
     config_changed_signal = pyqtSignal()
     animation_changed_signal = pyqtSignal(bool)
+    theme_changed_signal = pyqtSignal(Theme)
 
     def __init__(self, icon=None):
         super().__init__()
@@ -44,8 +52,8 @@ class ConfigPage(QWidget):
 
         two_buttons_widget = QWidget()
         two_buttons_widget.setLayout(QHBoxLayout())
-        self.delete_config_button = QPushButton("Delete")
-        self.add_config_button = QPushButton("New")
+        self.delete_config_button = QPushButton("-")
+        self.add_config_button = QPushButton("+")
         two_buttons_widget.layout().addWidget(self.delete_config_button)
         two_buttons_widget.layout().addWidget(self.add_config_button)
         layout.addWidget(two_buttons_widget, row, column)
@@ -83,6 +91,14 @@ class ConfigPage(QWidget):
         column += 1
         layout.addWidget(self.animation_options, row, column)
 
+        row += 1
+        column = 0
+        self.theme_options = QComboBox()
+        self.theme_options.addItems(['White', 'Black'])
+        layout.addWidget(QLabel('Theme'), row, column)
+        column += 1
+        layout.addWidget(self.theme_options, row, column)
+
         main_layout.addLayout(layout)
 
         self.setLayout(main_layout)
@@ -95,6 +111,12 @@ class ConfigPage(QWidget):
         self.config_name_combobox.currentIndexChanged.connect(self.on_config_selected)
         self.secondary_resource_button.clicked.connect(self.select_secondary_resource)
         self.animation_options.currentIndexChanged.connect(lambda enabled=bool(self.animation_options.currentIndex()): self.animation_changed_signal.emit(enabled))
+
+        self.theme_options.currentIndexChanged.connect(self.theme_options_changed)
+
+    def theme_options_changed(self, index):
+        theme = Theme(index)
+        self.theme_changed_signal.emit(theme)
 
     def select_main_resource(self):
         file_path, _ = QFileDialog.getOpenFileName(self, "Select", "", "Json File (*.json)")
@@ -139,7 +161,6 @@ class ConfigPage(QWidget):
                     self.secondary_resource_input.setText("")
 
     def save_config(self):
-        # print(f'save_config')
         current_config_name = self.config_name_combobox.currentText()
         if current_config_name:
             self.configs[current_config_name] = {
@@ -149,7 +170,8 @@ class ConfigPage(QWidget):
             data = {
                 "configs": self.configs,
                 "current_config": current_config_name,
-                "animation_enabled": self.animation_options.currentIndex()
+                "animation_enabled": self.animation_options.currentIndex(),
+                "current_theme": self.theme_options.currentIndex()
             }
             with open("config.json", "w") as f:
                 json.dump(data, f, indent=4)
@@ -161,9 +183,13 @@ class ConfigPage(QWidget):
                 self.configs = data.get("configs", {})
                 current_config = data.get("current_config")
                 animation_enabled = data.get("animation_enabled")
-            
+                current_theme = data.get("current_theme")
+
             if animation_enabled:
                 self.animation_options.setCurrentIndex(animation_enabled)
+
+            if current_theme:
+                self.theme_options.setCurrentIndex(current_theme)
             
             for config_name in self.configs.keys():
                 self.config_name_combobox.addItem(config_name)

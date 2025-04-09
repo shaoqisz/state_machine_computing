@@ -3,11 +3,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPlainTextEdit, 
 from PyQt5.QtCore import Qt, QSize, QTimer, pyqtSignal
 from PyQt5.QtGui import QTextDocument
 
-
-class Theme:
-    white = 0
-    black = 1
-
+from config_page import Theme
 
 class TextEditSearch(QWidget):
     def __init__(self, text_edit=None, parent=None):
@@ -83,7 +79,6 @@ class TextEditSearch(QWidget):
         self.setLayout(main_layout)
         self.setWindowTitle('Search Text Edit')
 
-        self.set_white_theme()
 
     def contextMenuEvent(self, event):
         menu = QMenu(self)
@@ -100,32 +95,32 @@ class TextEditSearch(QWidget):
 
         menu.addAction(paste_action)
 
-        menu.addSeparator()
+        # menu.addSeparator()
 
-        sub_menu = QMenu('Theme', self)
-        menu.addMenu(sub_menu)
+        # sub_menu = QMenu('Theme', self)
+        # menu.addMenu(sub_menu)
         
-        white_theme_action = sub_menu.addAction("White")
-        white_theme_action.setCheckable(True)
-        white_theme_action.triggered.connect(self.set_white_theme)
+        # white_theme_action = sub_menu.addAction("White")
+        # white_theme_action.setCheckable(True)
+        # white_theme_action.triggered.connect(self.set_white_theme)
 
-        black_theme_action = sub_menu.addAction("Black")
-        black_theme_action.setCheckable(True)
+        # black_theme_action = sub_menu.addAction("Black")
+        # black_theme_action.setCheckable(True)
 
-        black_theme_action.triggered.connect(self.set_black_theme)
+        # black_theme_action.triggered.connect(self.set_black_theme)
 
-        if self.current_theme == Theme.white:
-            white_theme_action.setChecked(True)
-        elif self.current_theme == Theme.black:
-            black_theme_action.setChecked(True)
+        # if self.current_theme == Theme.white:
+        #     white_theme_action.setChecked(True)
+        # elif self.current_theme == Theme.black:
+        #     black_theme_action.setChecked(True)
 
         menu.exec_(event.globalPos())
 
     def set_white_theme(self):
-        self.current_theme = Theme.white
         self.setStyleSheet("""
                             QWidget {
                                 background: white; color: black; border: 1px solid gray;
+                                border-radius: 8px;
                             }
                             QMenu::separator {
                                 background: gray;
@@ -135,11 +130,11 @@ class TextEditSearch(QWidget):
                            """)
 
     def set_black_theme(self):
-        self.current_theme = Theme.black
         self.setStyleSheet("""
                            
                            QWidget {
-                            background: black; color: white; border: 1px solid gray;
+                                background: black; color: white; border: 1px solid gray;
+                                border-radius: 8px;
                            }
                             QMenu::separator {
                                 background: gray;
@@ -148,12 +143,6 @@ class TextEditSearch(QWidget):
                             }
 
                            """)
-
-    def set_theme(self, theme):
-        if theme == Theme.black:
-            self.set_black_theme()
-        elif theme == Theme.white:
-            self.set_white_theme()
 
     def on_search_widget_mouse_press(self, event):
         if event.button() == Qt.LeftButton:

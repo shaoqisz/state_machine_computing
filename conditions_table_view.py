@@ -146,6 +146,15 @@ class MyTableView(QTableView):
         self.setStyleSheet("""
             QTableView {
                 font-size: 12px;
+                border-radius: 8px;
+                padding: 5px;
+                border: 1px solid gray;
+            }
+            QHeaderView::section {
+                border: 1px solid #d9dcdb;
+            }
+            QTableView::item {
+                padding: 5px;
             }
         """)
     def set_black_theme(self):
@@ -154,28 +163,53 @@ class MyTableView(QTableView):
                 background-color: black;
                 gridline-color: gray;
                 font-size: 12px;
+                border-radius: 8px;
+                padding: 5px;
             }
             QHeaderView::section {
                 background-color: black;
                 border: 1px solid gray;
+                padding: 5px;
             }
             QTableView::item {
                 background-color: black;
+                padding: 5px;
             }
             QTableView::item:selected {
                 background-color: gray;
             }
             QHeaderView::section:horizontal {
-                background-color: black;
+                background: black;
                 border-bottom: 1px solid gray;
+                color: white;
             }
             QHeaderView::section:vertical {
-                background-color: black;
+                background: black;
                 border-right: 1px solid gray;
+                color: white;
             }
             QTableCornerButton::section {
                 background-color: black;
                 border: 1px solid gray;
+            }
+            QScrollBar:vertical {
+                background: #1a1a1a;
+                width: 18px;
+                margin: 15px 0 15px 0;
+            }
+            QScrollBar::handle:vertical {
+                background: #333333;
+                min-height: 20px;
+            }
+            QScrollBar::add-line:vertical {
+                height: 15px;
+                subcontrol-position: bottom;
+                subcontrol-origin: margin;
+            }
+            QScrollBar::sub-line:vertical {
+                height: 15px;
+                subcontrol-position: top;
+                subcontrol-origin: margin;
             }
             """)
         
@@ -316,7 +350,7 @@ class MyTableView(QTableView):
 
             column = column + 1
             item = QStandardItem(str('Yes'))
-            item.setTextAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+            item.setTextAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
             self.table_model.setItem(row, column, item)            
 
     def get_selected_row(self):

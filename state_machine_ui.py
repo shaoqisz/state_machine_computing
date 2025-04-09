@@ -6,7 +6,7 @@ from enum import Enum
 
 from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QComboBox, QPushButton, QHBoxLayout, 
                              QPlainTextEdit, QShortcut, QSizePolicy, QSplitter, QMenu, QMainWindow, QMessageBox)
-from PyQt5.QtGui import QPainter, QColor, QPen, QPolygonF, QPainterPath, QFontMetrics, QFont, QIcon, QKeySequence
+from PyQt5.QtGui import QPainter, QColor, QPen, QPolygonF, QPainterPath, QFontMetrics, QFont, QIcon, QKeySequence, QPalette
 from PyQt5.QtCore import Qt, QSettings, QPointF, QEvent, pyqtSignal, QTimer
 from transitions.core import MachineError
 
@@ -15,7 +15,7 @@ from state_machine_core import Matter, CustomStateMachine
 from transitions.core import EventData
 
 from conditions_table_view import TableViewContainsSearchWidget
-from config_page import ConfigPage
+from config_page import ConfigPage, Theme
 from colorful_text_edit import ColorfulTextEdit, FunctionType
 from text_edit_search import TextEditSearch
 
@@ -70,6 +70,8 @@ class StateMachineWidget(QWidget):
 
         self.icon = icon
 
+        self.state_color = Qt.GlobalColor.white
+
         self.rect_2_name_margin = 10
 
         self.warning_error_msg_box = QMessageBox()
@@ -110,7 +112,7 @@ class StateMachineWidget(QWidget):
         self.json_states = None
         self.json_transitions = None
 
-    def set_animation_changed(self, animation_enabled):
+    def set_animation(self, animation_enabled):
         # print(f'animation_enabled={animation_enabled}')
         self.animation_enabled = animation_enabled
 
@@ -333,6 +335,12 @@ class StateMachineWidget(QWidget):
 
         self.update()
 
+    def set_black_theme(self):
+        self.state_color = QColor('#939393')
+    
+    def set_white_theme(self):
+        self.state_color = Qt.GlobalColor.white
+
     def update_final_current_state(self):
 
         for state in self.states:
@@ -409,7 +417,7 @@ class StateMachineWidget(QWidget):
         elif state == self.gray_state:
             painter.setBrush(Qt.GlobalColor.gray)
         else:
-            painter.setBrush(Qt.GlobalColor.white)
+            painter.setBrush(self.state_color)
 
         radius = 10
         if state.children is None or len(state.children) == 0:
@@ -1134,10 +1142,8 @@ class MainWindow(QMainWindow):
         self.setWindowIcon(QIcon('sm.png'))
         self.settings = QSettings("Philips", app_name)
 
-
-        sm_border_widget = QWidget(self)
-        sm_border_widget.setStyleSheet("border: 2px solid gray; border-radius: 5px;")
-        sm_border_widget.setLayout(QVBoxLayout())
+        self.sm_border_widget = QWidget(self)
+        self.sm_border_widget.setLayout(QVBoxLayout())
 
         # config
         self.config_page = ConfigPage(icon=self.windowIcon())
@@ -1159,11 +1165,10 @@ class MainWindow(QMainWindow):
                                          self.config_page.main_resource_input.text(), 
                                          self.config_page.secondary_resource_input.text())
         
-        self.state_machine.set_animation_changed(bool(self.config_page.animation_options.currentIndex()))
+        self.state_machine.set_animation(bool(self.config_page.animation_options.currentIndex()))
 
         # table view
         self.table_view_w_search = TableViewContainsSearchWidget()
-        self.table_view_w_search.table_view.set_white_theme()
 
         if self.state_machine.json_transitions is not None:
             self.table_view_w_search.set_transitions(self.config_page.config_name_combobox.currentText(), self.state_machine.json_transitions)
@@ -1173,6 +1178,10 @@ class MainWindow(QMainWindow):
         else:
             self.table_view_w_search.clear_transitions()
         self._load_conditions_allowed()
+
+        # theme
+        self.set_theme(Theme(self.config_page.theme_options.currentIndex()))
+
 
         ##############
 
@@ -1209,24 +1218,22 @@ class MainWindow(QMainWindow):
         self.text_edit_bottom_widget.layout().setContentsMargins(0,0,0,0)
         self.text_edit_bottom_widget.layout().setSpacing(5)
 
-
         ###### 
-
 
         # layout
         main_widget = QWidget(self)
+
         main_widget.setLayout(QVBoxLayout())
 
         self.vert_spliter = QSplitter(Qt.Vertical, self)
         self.vert_spliter.setObjectName("vert_spliter")
 
         ################
-        sm_border_widget.layout().addWidget(self.state_machine)
+        self.sm_border_widget.layout().addWidget(self.state_machine)
         margin = 4
-        sm_border_widget.layout().setContentsMargins(margin, margin, margin, margin)
+        self.sm_border_widget.layout().setContentsMargins(margin, margin, margin, margin)
         # sm_border_widget.layout().setSpacing(0)
         ################
-
 
 
         self.right_widget.layout().addWidget(self.text_edit_search)
@@ -1241,10 +1248,9 @@ class MainWindow(QMainWindow):
 
         self.hor_spliter.addWidget(self.table_view_w_search)
         self.hor_spliter.addWidget(self.right_widget)
-
         ################
 
-        self.vert_spliter.addWidget(sm_border_widget)
+        self.vert_spliter.addWidget(self.sm_border_widget)
         self.vert_spliter.addWidget(self.hor_spliter)
 
         main_widget.layout().addWidget(self.vert_spliter)
@@ -1267,7 +1273,8 @@ class MainWindow(QMainWindow):
         # connections
         self.table_view_w_search.trigger_signal.connect(self.trigger_slot)
         self.config_page.config_changed_signal.connect(self.reload_config)
-        self.config_page.animation_changed_signal.connect(self.state_machine.set_animation_changed)
+        self.config_page.animation_changed_signal.connect(self.state_machine.set_animation)
+        self.config_page.theme_changed_signal.connect(self.set_theme)
 
         # self.table_view_w_search.init_state_signal.connect(self.init_state_slot)
         self.table_view_w_search.table_view.condition_allowed_changed.connect(self.state_machine.setup_conditions_allowed_slot)
@@ -1374,6 +1381,124 @@ class MainWindow(QMainWindow):
 
         self._load_conditions_allowed()
 
+    def set_theme(self, current_theme):
+        # print(f'current_theme={current_theme}')
+        if current_theme == Theme.black:
+            self.text_edit_search.set_black_theme()
+            self.table_view_w_search.table_view.set_black_theme()
+            self.set_black_theme()
+        elif current_theme == Theme.white:
+            self.text_edit_search.set_white_theme()
+            self.table_view_w_search.table_view.set_white_theme()
+            self.set_white_theme()
+
+    def set_white_theme(self):
+        style_sheet = """
+                QPushButton {
+                    background-color: rgba(0, 150, 180, 0.6);
+                    color: white;
+                    border: 2px solid rgba(255, 255, 255, 0.5);
+                    padding: 5px 15px;
+                    border-radius: 8px;
+                    font-size: 11px;
+                }
+                QPushButton:hover {
+                    background-color: rgba(0, 123, 200, 1);
+                    border: 2px solid white;
+                }
+                QPushButton:pressed {
+                    background-color: rgba(0, 86, 179, 1);
+                    border: 2px solid white;
+                }
+                QPushButton:disabled {
+                    background-color: #cccccc;
+                    color: #999999;
+                    border: 2px solid #b3b3b3;
+                }
+            """
+        self.config_page.setStyleSheet(style_sheet)
+        self.setStyleSheet(style_sheet)
+
+        self.set_state_machine_white_theme()
+    
+    def set_black_theme(self):
+        style_sheet = """
+            QWidget {
+                background-color: #2b2b2b;
+                color: #ffffff;
+            }
+            QLabel {
+                font-size: 14px;
+                padding: 5px;
+            }
+            QLineEdit {
+                background-color: #1a1a1a;
+                color: #ffffff;
+                border: 1px solid #444444;
+                border-radius: 5px;
+                padding: 3px 5px;
+                font-size: 14px;
+            }
+            QLineEdit:focus {
+                border: 1px solid #666666;
+            }
+            QComboBox {
+                background-color: #1a1a1a;
+                color: #ffffff;
+                border: 1px solid #444444;
+                padding: 3px 5px;
+                font-size: 14px;
+            }
+            QComboBox:focus {
+                border: 1px solid #666666;
+            }
+            QCheckBox {
+                font-size: 14px;
+                padding: 5px;
+            }
+            QCheckBox::indicator {
+                width: 16px;
+                height: 16px;
+                background-color: #1a1a1a;
+                border: 1px solid #444444;
+                border-radius: 3px;
+            }
+            QPushButton {
+                background-color: #2b2b2b;
+                color: #ffffff;
+                border: 2px solid #444444;
+                padding: 5px 15px;
+                border-radius: 8px;
+                font-size: 11px;
+            }
+            QPushButton:hover {
+                background-color: #3b3b3b;
+                border: 2px solid #666666;
+            }
+            QPushButton:pressed {
+                background-color: #4b4b4b;
+                border: 2px solid #888888;
+            }
+            QPushButton:disabled {
+                background-color: #1a1a1a;
+                color: #666666;
+                border: 2px solid #333333;
+            }
+    """
+
+        self.config_page.setStyleSheet(style_sheet)
+        self.setStyleSheet(style_sheet)
+
+        self.set_state_machine_black_theme()
+
+    def set_state_machine_black_theme(self):
+        self.sm_border_widget.setStyleSheet("border: 2px solid gray; border-radius: 5px; background: #939393;")
+        self.state_machine.set_black_theme()
+
+    def set_state_machine_white_theme(self):
+        self.sm_border_widget.setStyleSheet("border: 2px solid gray; border-radius: 5px; background: white;")
+        self.state_machine.set_white_theme()
+
     def open_config_page(self):
         self.config_page.show()
         self.config_page.activateWindow()
@@ -1403,9 +1528,6 @@ class MainWindow(QMainWindow):
         # geometry
         self.settings.setValue("geometry", self.saveGeometry())
 
-        # theme
-        self.settings.setValue("theme", int(self.text_edit_search.current_theme))
-
         # splitter
         self.settings.setValue(self.vert_spliter.objectName(), self.vert_spliter.saveState())
         self.settings.setValue(self.hor_spliter.objectName(), self.hor_spliter.saveState())
@@ -1418,10 +1540,6 @@ class MainWindow(QMainWindow):
         geometry = self.settings.value("geometry")
         if geometry:
             self.restoreGeometry(geometry)
-
-        theme = self.settings.value("theme")
-        if theme:
-            self.text_edit_search.set_theme(theme)
 
         # splitter
         splitter_state = self.settings.value(self.vert_spliter.objectName())
