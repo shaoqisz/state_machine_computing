@@ -123,13 +123,31 @@ class TextEditSearch(QWidget):
 
     def set_white_theme(self):
         self.current_theme = Theme.white
-        self.setStyleSheet('background: white; color: black; border: 1px solid gray;')
-        # self.search_widget.setStyleSheet("background-color: white; border: 1px solid gray;")
+        self.setStyleSheet("""
+                            QWidget {
+                                background: white; color: black; border: 1px solid gray;
+                            }
+                            QMenu::separator {
+                                background: gray;
+                                height: 1px;
+                                margin: 5px 5px;
+                            }
+                           """)
 
     def set_black_theme(self):
         self.current_theme = Theme.black
-        self.setStyleSheet('background: black; color: white; border: 1px solid gray;')
-        # self.search_widget.setStyleSheet("background-color: black; border: 1px solid gray;")
+        self.setStyleSheet("""
+                           
+                           QWidget {
+                            background: black; color: white; border: 1px solid gray;
+                           }
+                            QMenu::separator {
+                                background: gray;
+                                height: 1px;
+                                margin: 5px 5px;
+                            }
+
+                           """)
 
     def set_theme(self, theme):
         if theme == Theme.black:
