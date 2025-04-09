@@ -2,6 +2,7 @@ import sys, os
 import json
 import math
 import configparser
+from enum import Enum 
 
 from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QComboBox, QPushButton, QHBoxLayout, 
                              QPlainTextEdit, QShortcut, QSizePolicy, QSplitter, QMenu, QMainWindow, QMessageBox)
@@ -45,6 +46,15 @@ class State:
         self.color = None
         self.name_rect = None
 
+
+class StateConversion(Enum):
+    explicit = 0
+    implicit = 1
+
+    @property
+    def capitalized_name(self):
+        return self.name.capitalize()
+
 class StateMachineWidget(QWidget):
 
     trigger_name_signal = pyqtSignal(str)
@@ -52,8 +62,8 @@ class StateMachineWidget(QWidget):
     state_machine_init_signal = pyqtSignal(str)
     new_state_machine_signal = pyqtSignal(str)
 
-    enter_state_changed_signal = pyqtSignal(str)
-    leave_state_changed_signal = pyqtSignal(str)
+    enter_state_changed_signal = pyqtSignal(str, StateConversion)
+    leave_state_changed_signal = pyqtSignal(str, StateConversion)
 
     def __init__(self, icon=None):
         super().__init__()
@@ -66,6 +76,9 @@ class StateMachineWidget(QWidget):
         self.warning_error_msg_box.setWindowIcon(self.icon)
         self.warning_error_msg_box.setIcon(QMessageBox.Warning)
         self.warning_error_msg_box.setStandardButtons(QMessageBox.Ok)
+
+        self.transitions_timer = QTimer()
+        self.transitions_timer_is_running = False
         
         self.yellow_state = None
         self.gray_state = None
@@ -315,25 +328,34 @@ class StateMachineWidget(QWidget):
         self.update()
 
     def update_final_current_state(self):
+
         for state in self.states:
             if self.model.state == self.get_full_path(state):
                 self.yellow_state = state
 
-                self.set_leave_enter_function(state)
+                self.set_leave_enter_function(state, state_conversion=StateConversion.implicit)
 
         self.update()
+        self.transitions_timer_is_running = False
 
-    def set_leave_enter_function(self, current):
-        for state in self.states:
-            if current == state:
-                if self.last_current_state is not state:
-                    if self.last_current_state is not None and self.last_current_state in self.states:
-                        self.leave_state_changed_signal.emit(self.get_full_path(self.last_current_state))
-                    else:
-                        print('last current state is none')
+    # def set_leave_enter_function(self, current, implicit=False):
+    #     for state in self.states:
+    #         if current == state:
+    #             if self.last_current_state is not state:
+    #                 if self.last_current_state is not None and self.last_current_state in self.states:
+    #                     self.leave_state_changed_signal.emit(self.get_full_path(self.last_current_state), implicit)
 
-                    self.last_current_state = state
-                    self.enter_state_changed_signal.emit(self.get_full_path(state))
+    #                 self.last_current_state = state
+    #                 self.enter_state_changed_signal.emit(self.get_full_path(state), implicit)
+
+    def set_leave_enter_function(self, current, state_conversion=StateConversion.explicit):
+        if current is not None:
+            if self.last_current_state is not current:
+                if self.last_current_state is not None and self.last_current_state in self.states:
+                    self.leave_state_changed_signal.emit(self.get_full_path(self.last_current_state), state_conversion)
+
+                self.last_current_state = current
+                self.enter_state_changed_signal.emit(self.get_full_path(current), state_conversion)
 
     def set_start_state(self, state):
         self.last_current_state = state
@@ -349,14 +371,13 @@ class StateMachineWidget(QWidget):
             conditions_list = data['conditions']
             if source_full_name == source_name:
                 result = any(_conditions == conditions for _conditions in conditions_list)
-                if result is True:
-                    
+                if result is True:                    
                     self.set_start_state(_source)
-                    timer = QTimer()
-                    timer.singleShot(150,   lambda current=None,  last=_source:  self.set_current_last_state(current, last))
-                    timer.singleShot(400,   lambda current=_dest, last=_source:  self.set_current_last_state(current, last))
-                    timer.singleShot(650,   lambda current=_dest, last=None:     self.set_current_last_state(current, last))
-                    timer.singleShot(1000,  lambda current=_dest, last=None:     self.update_final_current_state())
+                    self.transitions_timer.singleShot(150,   lambda current=None,  last=_source:  self.set_current_last_state(current, last))
+                    self.transitions_timer.singleShot(400,   lambda current=_dest, last=_source:  self.set_current_last_state(current, last))
+                    self.transitions_timer.singleShot(650,   lambda current=_dest, last=None:     self.set_current_last_state(current, last))
+                    self.transitions_timer.singleShot(850 ,  lambda current=_dest, last=None:     self.update_final_current_state())
+                    self.transitions_timer_is_running = True
 
     def _draw_state(self, painter : QPainter, state):
         # 0. 计算名字锚点长度
@@ -1005,6 +1026,13 @@ class StateMachineWidget(QWidget):
 
     def trigger_transition(self, trigger):
         try:
+            if self.transitions_timer_is_running is True:
+                # print(f'transitions_timer_is_running={self.transitions_timer_is_running}')
+                self.warning_error_msg_box.setText('Slow down, it\'s processing.')
+                self.warning_error_msg_box.setWindowTitle('Oops')
+                self.warning_error_msg_box.exec()
+                return
+
             self.trigger_name_signal.emit(trigger)
             getattr(self.model, trigger)()
 
@@ -1243,11 +1271,9 @@ class MainWindow(QMainWindow):
                                   function_type=FunctionType.trigger)
 
     def condition_message_slot(self, source_name, dest_name, function_name, return_code):
-        
         if return_code is True:
-            print(f'hightlight source_name={source_name} dest_name={dest_name} conditions={function_name}')
+            # print(f'hightlight source_name={source_name} dest_name={dest_name} conditions={function_name}')
             self.state_machine.set_source_conditions_focus(source_name, dest_name, function_name)
-
 
         self.text_edit.append_log(object_name='sm',
                                   function_name=function_name, 
@@ -1264,19 +1290,28 @@ class MainWindow(QMainWindow):
     def new_state_machine_slot(self, sm_name):
         self.text_edit.append_log_new_machine(sm_name, 'sm')
 
-    def enter_state_slot(self, name):
+    def enter_state_slot(self, name, state_conversion):
+        extra_flag = None
+        if state_conversion == StateConversion.implicit:
+            extra_flag = state_conversion.capitalized_name
         self.text_edit.append_log(object_name='sm',
                                   function_name=f'{name}.entry', 
                                   function_params=None, 
                                   return_code=None,
-                                  function_type=FunctionType.state)
+                                  function_type=FunctionType.state,
+                                  extra_flag=extra_flag)
 
-    def leave_state_slot(self, name):
+    def leave_state_slot(self, name, state_conversion):
+        extra_flag = None
+        if state_conversion == StateConversion.implicit:
+            extra_flag = state_conversion.capitalized_name
+
         self.text_edit.append_log(object_name='sm',
                                   function_name=f'{name}.exit', 
                                   function_params=None, 
                                   return_code=None,
-                                  function_type=FunctionType.state)
+                                  function_type=FunctionType.state,
+                                  extra_flag=extra_flag)
         
 
     def _save_conditions_allowed(self):

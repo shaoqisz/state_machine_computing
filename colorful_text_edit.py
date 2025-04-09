@@ -55,7 +55,7 @@ class ColorfulTextEdit(QPlainTextEdit):
     def add_separator(self):
         self.appendHtml('<span style="color: #2ca20f; font-weight: bold;"> --------------------------- user added separator --------------------------- </span>')
 
-    def append_log(self, object_name, function_name, function_params, return_code, left_variable=None, function_type:FunctionType = FunctionType.other):
+    def append_log(self, object_name, function_name, function_params, return_code, left_variable=None, function_type:FunctionType = FunctionType.other, extra_flag=None):
         now = datetime.datetime.now()
         timestamp = now.strftime(TIMESTAMP_FORMAT)
 
@@ -86,6 +86,10 @@ class ColorfulTextEdit(QPlainTextEdit):
         if left_variable is not None:
             color_left_variable = f'{left_variable} ='
 
-        text = f"{color_ts} {color_left_variable} {color_object_name}{color_func_name}{color_function_params} {color_return_code}"
+        color_extra_flag = ''
+        if extra_flag is not None:
+            color_extra_flag = f'<span style="color: #2ca20f;">[{extra_flag}]</span>'
+
+        text = f"{color_ts} {color_left_variable} {color_object_name}{color_func_name}{color_function_params} {color_return_code} {color_extra_flag}"
 
         self.appendHtml(text)
