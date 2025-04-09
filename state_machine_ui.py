@@ -11,7 +11,7 @@ from transitions.core import MachineError
 
 
 from state_machine_core import Matter, CustomStateMachine
-
+from transitions.core import EventData
 
 from conditions_table_view import TableViewContainsSearchWidget
 from config_page import ConfigPage
@@ -48,7 +48,7 @@ class State:
 class StateMachineWidget(QWidget):
 
     trigger_name_signal = pyqtSignal(str)
-    condition_message_signal = pyqtSignal(str, bool)
+    condition_message_signal = pyqtSignal(str, str, str, bool)
     state_machine_init_signal = pyqtSignal(str)
     new_state_machine_signal = pyqtSignal(str)
 
@@ -144,9 +144,16 @@ class StateMachineWidget(QWidget):
 
         self.machine = CustomStateMachine(model=self.model,
                                           states=self.json_states,
+                                          send_event=True,
                                           ignore_invalid_triggers=True, 
                                           transitions=self.json_transitions, 
                                           **extra_args)
+        
+        # print(f'current={self.model.state}') 
+        for state in self.states:
+            if self.model.state == self.get_full_path(state):
+                self.set_current_last_state(state, self.last_current_state)
+
         self.update()
 
     def save_settings(self, settings):
@@ -297,12 +304,59 @@ class StateMachineWidget(QWidget):
             painter.drawText(x, new_y, conditions)
 
     def set_current_last_state(self, current, last):
+        
+        self.set_leave_enter_function(current)
+
         self.yellow_state = current
         self.gray_state = last
 
         self.focus_transition = (last, current)
-        
+
         self.update()
+
+    def update_final_current_state(self):
+        for state in self.states:
+            if self.model.state == self.get_full_path(state):
+                self.yellow_state = state
+
+                self.set_leave_enter_function(state)
+
+        self.update()
+
+    def set_leave_enter_function(self, current):
+        for state in self.states:
+            if current == state:
+                if self.last_current_state is not state:
+                    if self.last_current_state is not None and self.last_current_state in self.states:
+                        self.leave_state_changed_signal.emit(self.get_full_path(self.last_current_state))
+                    else:
+                        print('last current state is none')
+
+                    self.last_current_state = state
+                    self.enter_state_changed_signal.emit(self.get_full_path(state))
+
+    def set_start_state(self, state):
+        self.last_current_state = state
+
+    def set_source_conditions_focus(self, source_name, dest_name, conditions):
+        for key, data in self.merged_transitions.items():
+            _source = data['source']
+            _dest = data['dest']
+
+            source_full_name = self.get_full_path(_source)
+            # dest_full_name = self.get_full_path(_dest)
+
+            conditions_list = data['conditions']
+            if source_full_name == source_name:
+                result = any(_conditions == conditions for _conditions in conditions_list)
+                if result is True:
+                    
+                    self.set_start_state(_source)
+                    timer = QTimer()
+                    timer.singleShot(150,   lambda current=None,  last=_source:  self.set_current_last_state(current, last))
+                    timer.singleShot(400,   lambda current=_dest, last=_source:  self.set_current_last_state(current, last))
+                    timer.singleShot(650,   lambda current=_dest, last=None:     self.set_current_last_state(current, last))
+                    timer.singleShot(1000,  lambda current=_dest, last=None:     self.update_final_current_state())
 
     def _draw_state(self, painter : QPainter, state):
         # 0. 计算名字锚点长度
@@ -316,20 +370,6 @@ class StateMachineWidget(QWidget):
 
         # 1. 绘制矩形
         self.set_state_rect_style(painter, state)
-        if self.model.state == self.get_full_path(state):
-            if self.last_current_state is not state:
-                timer = QTimer()
-
-                if self.last_current_state is not None:
-                    self.leave_state_changed_signal.emit(self.get_full_path(self.last_current_state))
-
-                timer.singleShot(150, lambda current=None, last=self.last_current_state : self.set_current_last_state(current, last))
-                timer.singleShot(400, lambda current=state, last=self.last_current_state : self.set_current_last_state(current, last))
-
-                self.last_current_state = state
-                self.enter_state_changed_signal.emit(self.model.state)
-                timer.singleShot(650, lambda current=state, last=None : self.set_current_last_state(current, last))
-
 
         if state == self.yellow_state:
             painter.setBrush(Qt.GlobalColor.yellow)
@@ -977,8 +1017,11 @@ class StateMachineWidget(QWidget):
 
     def create_new_function(self, old_name, return_code, signal):
 
-        def new_function(self):
-            signal.emit(old_name, return_code)
+        def new_function(self, event: EventData):
+            # print(f"source_name={event.state.name}")
+            source = event.transition.source 
+            dest = event.transition.dest
+            signal.emit(source, dest, old_name, return_code)
             return return_code
 
         new_function.__name__ = old_name
@@ -1199,7 +1242,13 @@ class MainWindow(QMainWindow):
                                   return_code=None,
                                   function_type=FunctionType.trigger)
 
-    def condition_message_slot(self, function_name, return_code):
+    def condition_message_slot(self, source_name, dest_name, function_name, return_code):
+        
+        if return_code is True:
+            print(f'hightlight source_name={source_name} dest_name={dest_name} conditions={function_name}')
+            self.state_machine.set_source_conditions_focus(source_name, dest_name, function_name)
+
+
         self.text_edit.append_log(object_name='sm',
                                   function_name=function_name, 
                                   function_params=None, 
