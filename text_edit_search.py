@@ -29,9 +29,9 @@ class TextEditSearch(QWidget):
         self.search_input = QLineEdit()
 
         self.prev_button = QPushButton("Prev")
-        self.prev_button.setFixedWidth(50)
+        self.prev_button.setFixedWidth(65)
         self.next_button = QPushButton("Next")
-        self.next_button.setFixedWidth(50)
+        self.next_button.setFixedWidth(65)
 
         label = QLabel('Find')
         label.setStyleSheet("border: 0px;")
@@ -49,7 +49,7 @@ class TextEditSearch(QWidget):
         self.search_widget.setLayout(self.search_layout)
         self.search_widget.setVisible(False)
 
-        self.search_widget_max_size = QSize(300, 30)
+        self.search_widget_max_size = QSize(350, 35)
         self.search_widget.setMaximumSize(self.search_widget_max_size)
 
        # 创建堆叠布局
@@ -67,7 +67,7 @@ class TextEditSearch(QWidget):
         self.search_input.returnPressed.connect(self.next_search)
 
         # 绑定 Ctrl+F 快捷键
-        self.text_edit.installEventFilter(self)
+        # self.text_edit.installEventFilter(self)
 
         # 创建主布局
         main_layout = QVBoxLayout(self)
@@ -95,7 +95,12 @@ class TextEditSearch(QWidget):
 
         menu.addAction(paste_action)
 
-        # menu.addSeparator()
+        menu.addSeparator()
+
+        find_action = QAction("Find", self)
+        find_action.setShortcut('Ctrl+F')
+        find_action.triggered.connect(self.show_find_action_slot)
+        menu.addAction(find_action)
 
         # sub_menu = QMenu('Theme', self)
         # menu.addMenu(sub_menu)
@@ -116,32 +121,100 @@ class TextEditSearch(QWidget):
 
         menu.exec_(event.globalPos())
 
+    def show_find_action_slot(self):
+        if not self.search_widget.isVisible():
+            self.search_widget.setVisible(True)
+            self.update_search_widget_position()
+            self.search_input.setFocus()
+
     def set_white_theme(self):
         self.setStyleSheet("""
                             QWidget {
                                 background: white; color: black; border: 1px solid gray;
                                 border-radius: 8px;
                             }
+                            QPushButton {
+                                background-color: rgba(0, 150, 180, 0.6);
+                                color: white;
+                                border: 2px solid rgba(255, 255, 255, 0.5);
+                                padding: 5px 15px;
+                                border-radius: 8px;
+                                font-size: 11px;
+                            }
+                            QPushButton:hover {
+                                background-color: rgba(0, 123, 200, 1);
+                                border: 2px solid white;
+                            }
+                            QPushButton:pressed {
+                                background-color: rgba(0, 86, 179, 1);
+                                border: 2px solid white;
+                            }
+                            QPushButton:disabled {
+                                background-color: #cccccc;
+                                color: #999999;
+                                border: 2px solid #b3b3b3;
+                            }
+                            QMenu {
+                                background-color: #ffffff;
+                                color: #000000;
+                                border: 1px solid #cccccc;
+                            }
+                            QMenu::item {
+                                padding: 5px 20px;
+                            }
+                            QMenu::item:selected {
+                                background-color: #e0e0e0;
+                            }
                             QMenu::separator {
-                                background: gray;
                                 height: 1px;
-                                margin: 5px 5px;
+                                background: #cccccc;
+                                margin: 5px 0;
                             }
                            """)
 
     def set_black_theme(self):
         self.setStyleSheet("""
-                           
-                           QWidget {
+                            QWidget {
                                 background: black; color: white; border: 1px solid gray;
                                 border-radius: 8px;
-                           }
-                            QMenu::separator {
-                                background: gray;
-                                height: 1px;
-                                margin: 5px 5px;
                             }
-
+                           QPushButton {
+                                background-color: #2b2b2b;
+                                color: #ffffff;
+                                border: 2px solid #444444;
+                                padding: 5px 15px;
+                                border-radius: 8px;
+                                font-size: 11px;
+                            }
+                            QPushButton:hover {
+                                background-color: #3b3b3b;
+                                border: 2px solid #666666;
+                            }
+                            QPushButton:pressed {
+                                background-color: #4b4b4b;
+                                border: 2px solid #888888;
+                            }
+                            QPushButton:disabled {
+                                background-color: #1a1a1a;
+                                color: #666666;
+                                border: 2px solid #333333;
+                            }
+                            QMenu {
+                                background-color: #2b2b2b;
+                                color: #ffffff;
+                                border: 1px solid #444444;
+                            }
+                            QMenu::item {
+                                padding: 5px 20px;
+                            }
+                            QMenu::item:selected {
+                                background-color: #3b3b3b;
+                            }
+                            QMenu::separator {
+                                height: 1px;
+                                background: #444444;
+                                margin: 5px 0;
+                            }
                            """)
 
     def on_search_widget_mouse_press(self, event):

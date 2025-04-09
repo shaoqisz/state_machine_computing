@@ -85,8 +85,8 @@ class StateMachineWidget(QWidget):
         self.transitions_timer = QTimer()
         self.transitions_timer_is_running = False
         
-        self.yellow_state = None
-        self.gray_state = None
+        self.hightlight_state = None
+        self.weak_state = None
 
         self.focus_state = None
         self.focus_transition = None
@@ -281,10 +281,21 @@ class StateMachineWidget(QWidget):
         self._draw_transitions(painter)
 
     def set_state_rect_style(self, painter, state):
+        pen_color = self.opposite_color
+        pen_width = 2
         if self.focus_state is state:
-            painter.setPen(QPen(state.color, 4))
+            pen_color = state.color
+            pen_width = 4
+
+        if state == self.hightlight_state:
+            painter.setBrush(Qt.GlobalColor.yellow)
+            pen_color = Qt.GlobalColor.black
+        elif state == self.weak_state:
+            painter.setBrush(Qt.GlobalColor.gray)
         else:
-            painter.setPen(QPen(self.opposite_color, 2))
+            painter.setBrush(self.state_color)
+
+        painter.setPen(QPen(pen_color, pen_width))
 
     def set_line_style(self, painter, state, transition_key):
         if self.focus_state is state or self.focus_transition == transition_key:
@@ -329,8 +340,8 @@ class StateMachineWidget(QWidget):
         
         self.set_leave_enter_function(current)
 
-        self.yellow_state = current
-        self.gray_state = last
+        self.hightlight_state = current
+        self.weak_state = last
 
         self.focus_transition = (last, current)
 
@@ -349,7 +360,7 @@ class StateMachineWidget(QWidget):
 
         for state in self.states:
             if self.model.state == self.get_full_path(state):
-                self.yellow_state = state
+                self.hightlight_state = state
 
                 self.set_leave_enter_function(state, state_conversion=StateConversion.implicit)
 
@@ -415,13 +426,6 @@ class StateMachineWidget(QWidget):
 
         # 1. 绘制矩形
         self.set_state_rect_style(painter, state)
-
-        if state == self.yellow_state:
-            painter.setBrush(Qt.GlobalColor.yellow)
-        elif state == self.gray_state:
-            painter.setBrush(Qt.GlobalColor.gray)
-        else:
-            painter.setBrush(self.state_color)
 
         radius = 10
         if state.children is None or len(state.children) == 0:
@@ -1419,6 +1423,22 @@ class MainWindow(QMainWindow):
                     color: #999999;
                     border: 2px solid #b3b3b3;
                 }
+                QMenu {
+                    background-color: #ffffff;
+                    color: #000000;
+                    border: 1px solid #cccccc;
+                }
+                QMenu::item {
+                    padding: 5px 20px;
+                }
+                QMenu::item:selected {
+                    background-color: #e0e0e0;
+                }
+                QMenu::separator {
+                    height: 1px;
+                    background: #cccccc;
+                    margin: 5px 0;
+                }
             """
         self.config_page.setStyleSheet(style_sheet)
         self.setStyleSheet(style_sheet)
@@ -1487,6 +1507,22 @@ class MainWindow(QMainWindow):
                 background-color: #1a1a1a;
                 color: #666666;
                 border: 2px solid #333333;
+            }
+            QMenu {
+                background-color: #2b2b2b;
+                color: #ffffff;
+                border: 1px solid #444444;
+            }
+            QMenu::item {
+                padding: 5px 20px;
+            }
+            QMenu::item:selected {
+                background-color: #3b3b3b;
+            }
+            QMenu::separator {
+                height: 1px;
+                background: #444444;
+                margin: 5px 0;
             }
     """
 
