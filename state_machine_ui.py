@@ -71,6 +71,7 @@ class StateMachineWidget(QWidget):
         self.icon = icon
 
         self.state_color = Qt.GlobalColor.white
+        self.opposite_color = Qt.GlobalColor.black
 
         self.rect_2_name_margin = 10
 
@@ -283,13 +284,13 @@ class StateMachineWidget(QWidget):
         if self.focus_state is state:
             painter.setPen(QPen(state.color, 4))
         else:
-            painter.setPen(QPen(QColor(0, 0, 0), 2))
+            painter.setPen(QPen(self.opposite_color, 2))
 
     def set_line_style(self, painter, state, transition_key):
         if self.focus_state is state or self.focus_transition == transition_key:
             pen = QPen(state.color, 4)
         else:
-            pen = QPen(Qt.GlobalColor.black, 1)
+            pen = QPen(self.opposite_color, 1)
 
         pen.setCapStyle(Qt.PenCapStyle.RoundCap)
         pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
@@ -312,7 +313,7 @@ class StateMachineWidget(QWidget):
             painter.setPen(QPen(FunctionType.trigger.color, 1))
         else:
             self.font.setBold(False)
-            painter.setPen(QPen(Qt.GlobalColor.black, 1))
+            painter.setPen(QPen(self.opposite_color, 1))
 
         painter.setFont(self.font)
         painter.drawText(x, y, triggers)
@@ -336,10 +337,13 @@ class StateMachineWidget(QWidget):
         self.update()
 
     def set_black_theme(self):
-        self.state_color = QColor('#939393')
+        self.state_color = QColor('#2b2b2b')
+        self.opposite_color = Qt.GlobalColor.white
+
     
     def set_white_theme(self):
         self.state_color = Qt.GlobalColor.white
+        self.opposite_color = Qt.GlobalColor.black
 
     def update_final_current_state(self):
 
@@ -1492,7 +1496,7 @@ class MainWindow(QMainWindow):
         self.set_state_machine_black_theme()
 
     def set_state_machine_black_theme(self):
-        self.sm_border_widget.setStyleSheet("border: 2px solid gray; border-radius: 5px; background: #939393;")
+        self.sm_border_widget.setStyleSheet("border: 2px solid gray; border-radius: 5px; background: black;")
         self.state_machine.set_black_theme()
 
     def set_state_machine_white_theme(self):
