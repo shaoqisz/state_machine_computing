@@ -97,6 +97,10 @@ class StateMachineWidget(QWidget):
 
     def reload_config(self, config_name, STATES_CONFIG, TRANSITIONS_CONFIG_FOLDER):
         try:
+            # reset the offset when reload, scale can be remained
+            self.offset_x = 0
+            self.offset_y = 0
+
             self.new_state_machine_signal.emit(config_name)
 
             self.STATES_CONFIG = STATES_CONFIG
@@ -123,8 +127,6 @@ class StateMachineWidget(QWidget):
             if self.json_transitions is not None:
                 # print(f'json_transitions={json_transitions}')
                 self._connect_states(self.json_transitions)
-
-            # self.timer.singleShot(100, self._adjust_all_states)
 
         except Exception as e:
             self.warning_error_msg_box.setText(f'{e}')
@@ -251,15 +253,15 @@ class StateMachineWidget(QWidget):
 
     def set_state_rect_style(self, painter, state):
         if self.focus_state is state:
-            painter.setPen(QPen(QColor(0, 0, 0), 4))
+            painter.setPen(QPen(state.color, 4))
         else:
             painter.setPen(QPen(QColor(0, 0, 0), 2))
 
     def set_line_style(self, painter, state, transition_key):
         if self.focus_state is state or self.focus_transition == transition_key:
-            pen = QPen(Qt.GlobalColor.black, 4)
+            pen = QPen(state.color, 4)
         else:
-            pen = QPen(state.color, 2)
+            pen = QPen(Qt.GlobalColor.black, 1)
 
         pen.setCapStyle(Qt.PenCapStyle.RoundCap)
         pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
@@ -267,9 +269,9 @@ class StateMachineWidget(QWidget):
 
     def set_arrow_style(self, painter, state):
         if self.focus_state is state:
-            painter.setBrush(Qt.GlobalColor.transparent)
-            return 18
-        painter.setBrush(state.color)
+            painter.setBrush(state.color)
+            return 22
+        painter.setBrush(Qt.GlobalColor.black)
         return 12
 
     def draw_trigger_name(self, x, y, painter, state, transition_key, triggers, conditions):
@@ -1206,7 +1208,7 @@ class MainWindow(QMainWindow):
         
     def state_machine_init_slot(self, state_name):
         self.text_edit.append_log(object_name='sm',
-                                  function_name='init', 
+                                  function_name='set_initial_state', 
                                   function_params=[state_name], 
                                   return_code=None)
         

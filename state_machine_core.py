@@ -28,6 +28,8 @@ class CustomStateMachine(HGMachine):
     pass
 
 class Matter(object):
+    pass
+class Matter2(object):
     def __init__(self):
         self.bServoPowerOn = False
         self.axisMode = AxisMode.AXIS_MODE_UNKNOWN
