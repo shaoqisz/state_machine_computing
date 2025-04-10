@@ -392,8 +392,8 @@ class StateMachineWidget(QWidget):
                 result = any(_conditions == conditions for _conditions in conditions_list)
                 if result is True:                    
                     # self.set_start_state(_source)
-                    # print(f'source={_source.name} current={self.current_state.name}')
-                    assert(_source == self.current_state)
+                    print(f'source={_source.name} current={self.current_state.name} source_name={source_name}')
+                    # assert(_source == self.current_state)
                     if self.animation_enabled is True:
                         self.transitions_timer.singleShot(150,   lambda current=None,  last=_source:  self.set_current_last_state(current, last))
                         self.transitions_timer.singleShot(400,   lambda current=_dest, last=_source:  self.set_current_last_state(current, last))
