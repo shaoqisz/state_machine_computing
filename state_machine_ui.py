@@ -30,9 +30,6 @@ LEVEL_COLORS = [
     Qt.GlobalColor.darkGray,
 ]
 
-
-# def get_name_width(name, scale_factor):
-#     return (len(name)) * 10 * scale_factor
 class State:
     def __init__(self, name, children=None, parent=None):
         self.name = name
@@ -47,23 +44,23 @@ class State:
         self.name_rect = None
 
 
-class StateConversion(Enum):
-    explicit = 0
-    implicit = 1
+# class StateConversion(Enum):
+#     explicit = 0
+#     implicit = 1
 
-    @property
-    def capitalized_name(self):
-        return self.name.capitalize()
+#     @property
+#     def capitalized_name(self):
+#         return self.name.capitalize()
 
 class StateMachineWidget(QWidget):
 
-    trigger_name_signal = pyqtSignal(str)
-    condition_message_signal = pyqtSignal(str, str, str, bool)
-    state_machine_init_signal = pyqtSignal(str)
-    new_state_machine_signal = pyqtSignal(str)
+    called_trigger_signal = pyqtSignal(str)
+    called_condition_signal = pyqtSignal(str, str, str, bool)
+    called_enter_state_signal = pyqtSignal(str, str, str)
+    called_exit_state_signal = pyqtSignal(str, str, str)
 
-    enter_state_changed_signal = pyqtSignal(str, StateConversion)
-    leave_state_changed_signal = pyqtSignal(str, StateConversion)
+    called_set_initial_state_signal = pyqtSignal(str)
+    called_new_state_machine_signal = pyqtSignal(str)
 
     def __init__(self, icon=None):
         super().__init__()
@@ -123,7 +120,7 @@ class StateMachineWidget(QWidget):
             self.offset_x = 0
             self.offset_y = 0
 
-            self.new_state_machine_signal.emit(config_name)
+            self.called_new_state_machine_signal.emit(config_name)
 
             self.STATES_CONFIG = STATES_CONFIG
             self.TRANSITIONS_CONFIG_FOLDER = TRANSITIONS_CONFIG_FOLDER
@@ -157,7 +154,7 @@ class StateMachineWidget(QWidget):
 
 
     def set_init_state(self, state_name=None):
-        self.state_machine_init_signal.emit(state_name)
+        self.called_set_initial_state_signal.emit(state_name)
 
         self.model = Matter()
         extra_args = dict(auto_transitions=False, show_conditions=True, show_state_attributes=True)
@@ -220,21 +217,60 @@ class StateMachineWidget(QWidget):
         return None
 
     def _build_states(self, state_list, parent=None):
-        for state_data in state_list:
+        for i, state_data in enumerate(state_list):
             if isinstance(state_data, dict):
                 name:str = state_data['name']
 
                 if '_' in name:
                     raise Exception(f'Found the underline in the state name `{name}`, which is not allowed.')
                 
+                if 'on_enter' in state_data:
+                    enter_state_func_names = state_data['on_enter']
+                    # print(f'enter_state_func_names={enter_state_func_names}')
+                    if isinstance(enter_state_func_names, list):
+                        for enter_state_func_name in enter_state_func_names:
+                            self.setup_enter_state_function(enter_state_func_name)
+                else:
+                    default_enter_state_func_name = f'{name}_default_entry'
+                    state_data['on_enter'] = [default_enter_state_func_name]
+                    # print(f'default_enter_state_func_name={default_enter_state_func_name}')
+                    self.setup_enter_state_function(default_enter_state_func_name)
+
+                if 'on_exit' in state_data:
+                    exit_state_func_names = state_data['on_exit']
+                    # print(f'exit_state_func_names={exit_state_func_names}')
+                    if isinstance(exit_state_func_names, list):
+                        for exit_state_func_name in exit_state_func_names:
+                            self.setup_exit_state_function(exit_state_func_name)
+                else:
+                    default_exit_state_func_name = f'{name}_default_exit'
+                    state_data['on_exit'] = [default_exit_state_func_name]
+                    # print(f'default_exit_state_func_name={default_exit_state_func_name}')
+                    self.setup_enter_state_function(default_exit_state_func_name)
+
                 children = state_data.get('children', [])
                 state = State(name, parent=parent)
                 self._build_states(children, state)
                 state.children = [child for child in self.states if child.parent == state]
                 self.states.append(state)
             elif isinstance(state_data, str):
-                state = State(state_data, parent=parent)
+                name:str = state_data
+
+                state_dict = {"name": state_data}
+                state_list[i] = state_dict
+
+                state = State(name, parent=parent)
                 self.states.append(state)
+
+                default_enter_state_func_name = f'{name}_default_entry'
+                state_dict['on_enter'] = [default_enter_state_func_name]
+                # print(f'default_enter_state_func_name={default_enter_state_func_name}')
+                self.setup_enter_state_function(default_enter_state_func_name)
+
+                default_exit_state_func_name = f'{name}_default_exit'
+                state_dict['on_exit'] = [default_exit_state_func_name]
+                # print(f'default_exit_state_func_name={default_exit_state_func_name}')
+                self.setup_enter_state_function(default_exit_state_func_name)
 
     def _layout_states(self):
         default_w = 200
@@ -337,8 +373,6 @@ class StateMachineWidget(QWidget):
             painter.drawText(x, new_y, conditions)
 
     def set_current_last_state(self, current, last):
-        
-        self.set_leave_enter_function(current)
 
         self.hightlight_state = current
         self.weak_state = last
@@ -362,22 +396,9 @@ class StateMachineWidget(QWidget):
             if self.model.state == self.get_full_path(state):
                 self.hightlight_state = state
 
-                self.set_leave_enter_function(state, state_conversion=StateConversion.implicit)
-
         self.update()
         self.transitions_timer_is_running = False
 
-    def set_leave_enter_function(self, current, state_conversion=StateConversion.explicit):
-        if current is not None:
-            if self.current_state is not current:
-                if self.current_state is not None and self.current_state in self.states:
-                    self.leave_state_changed_signal.emit(self.get_full_path(self.current_state), state_conversion)
-
-                self.current_state = current
-                self.enter_state_changed_signal.emit(self.get_full_path(current), state_conversion)
-
-    # def set_start_state(self, state):
-    #     self.current_state = state
 
     def set_source_conditions_focus(self, source_name, dest_name, conditions):
         for key, data in self.merged_transitions.items():
@@ -392,7 +413,7 @@ class StateMachineWidget(QWidget):
                 result = any(_conditions == conditions for _conditions in conditions_list)
                 if result is True:                    
                     # self.set_start_state(_source)
-                    print(f'source={_source.name} current={self.current_state.name} source_name={source_name}')
+                    # print(f'source={_source.name} current={self.current_state.name} source_name={source_name}')
                     # assert(_source == self.current_state)
                     if self.animation_enabled is True:
                         self.transitions_timer.singleShot(150,   lambda current=None,  last=_source:  self.set_current_last_state(current, last))
@@ -1052,7 +1073,7 @@ class StateMachineWidget(QWidget):
                 # self.warning_error_msg_box.exec()
                 return
 
-            self.trigger_name_signal.emit(trigger)
+            self.called_trigger_signal.emit(trigger)
             getattr(self.model, trigger)()
 
             # 重绘界面以更新当前状态显示
@@ -1062,21 +1083,43 @@ class StateMachineWidget(QWidget):
         except MachineError as e:
             print(f"Invalid trigger: {trigger} {e}")
 
-    def create_new_function(self, old_name, return_code, signal):
+    def create_conditions_function(self, old_name, return_code, signal):
 
-        def new_function(self, event: EventData):
+        def new_conditions_function(self, event: EventData):
             # print(f"source_name={event.state.name}")
             source = event.transition.source 
             dest = event.transition.dest
             signal.emit(source, dest, old_name, return_code)
             return return_code
+        new_conditions_function.__name__ = old_name
+        return new_conditions_function
+    
+    def create_enter_state_function(self, old_name, signal):
+        def enter_state_function(self, event: EventData):
+            source = event.transition.source 
+            dest = event.transition.dest
+            signal.emit(source, dest, old_name)
+        enter_state_function.__name__ = old_name
+        return enter_state_function
+    
+    def create_exit_state_function(self, old_name, signal):
+        def exit_state_function(self, event: EventData):
+            source = event.transition.source 
+            dest = event.transition.dest
+            signal.emit(source, dest, old_name)
+        exit_state_function.__name__ = old_name
+        return exit_state_function
+    
+    def setup_enter_state_function(self, enter_state_function_name):
+        new_func = self.create_enter_state_function(enter_state_function_name, self.called_enter_state_signal)
+        setattr(Matter, enter_state_function_name, new_func)
 
-        new_function.__name__ = old_name
-
-        return new_function
+    def setup_exit_state_function(self, exit_state_function_name):
+        new_func = self.create_exit_state_function(exit_state_function_name, self.called_exit_state_signal)
+        setattr(Matter, exit_state_function_name, new_func)
 
     def setup_conditions_allowed_slot(self, conditions, allowed):
-        new_func = self.create_new_function(conditions, bool(allowed.lower() == 'yes'), self.condition_message_signal)
+        new_func = self.create_conditions_function(conditions, bool(allowed.lower() == 'yes'), self.called_condition_signal)
         if conditions is not None:
             # print(f'set Matter.{conditions} always return ({allowed})')
             setattr(Matter, conditions, new_func)
@@ -1153,12 +1196,14 @@ class MainWindow(QMainWindow):
 
         # state machine
         self.state_machine = StateMachineWidget(icon=self.windowIcon())
-        self.state_machine.trigger_name_signal.connect(self.trigger_name_slot)
-        self.state_machine.condition_message_signal.connect(self.condition_message_slot)
-        self.state_machine.state_machine_init_signal.connect(self.state_machine_init_slot)
-        self.state_machine.new_state_machine_signal.connect(self.new_state_machine_slot)
-        self.state_machine.enter_state_changed_signal.connect(self.enter_state_slot)
-        self.state_machine.leave_state_changed_signal.connect(self.leave_state_slot)
+        self.state_machine.called_trigger_signal.connect(self.trigger_name_slot)
+
+        self.state_machine.called_condition_signal.connect(self.condition_message_slot)
+        self.state_machine.called_enter_state_signal.connect(self.enter_state_message_slot)
+        self.state_machine.called_exit_state_signal.connect(self.exit_state_message_slot)
+
+        self.state_machine.called_set_initial_state_signal.connect(self.state_machine_init_slot)
+        self.state_machine.called_new_state_machine_signal.connect(self.new_state_machine_slot)
 
         self.state_machine.reload_config(self.config_page.config_name_combobox.currentText(),
                                          self.config_page.main_resource_input.text(), 
@@ -1288,52 +1333,35 @@ class MainWindow(QMainWindow):
     def trigger_name_slot(self, trigger):
         self.text_edit.append_log(object_name='sm',
                                   function_name=trigger, 
-                                  function_params=None, 
-                                  return_code=None,
                                   function_type=FunctionType.trigger)
 
     def condition_message_slot(self, source_name, dest_name, function_name, return_code):
         self.text_edit.append_log(object_name='sm',
                                   function_name=function_name, 
-                                  function_params=None, 
+                                  function_params=[source_name.split("_")[-1], dest_name.split("_")[-1]], 
                                   return_code=return_code,
                                   function_type=FunctionType.condition)
 
         if return_code is True:
             self.state_machine.set_source_conditions_focus(source_name, dest_name, function_name)
 
+    def enter_state_message_slot(self, source_name, dest_name, function_name):
+        self.text_edit.append_log(object_name='sm',
+                                  function_name=function_name, 
+                                  function_type=FunctionType.state)
+        
+    def exit_state_message_slot(self, source_name, dest_name, function_name):
+        self.text_edit.append_log(object_name='sm',
+                                  function_name=function_name, 
+                                  function_type=FunctionType.state)
+        
     def state_machine_init_slot(self, state_name):
         self.text_edit.append_log(object_name='sm',
                                   function_name='set_initial_state', 
-                                  function_params=[state_name], 
-                                  return_code=None)
+                                  function_params=[state_name])
         
     def new_state_machine_slot(self, sm_name):
         self.text_edit.append_log_new_machine(sm_name, 'sm')
-
-    def enter_state_slot(self, name, state_conversion):
-        extra_flag = None
-        if state_conversion == StateConversion.implicit:
-            extra_flag = state_conversion.capitalized_name
-        self.text_edit.append_log(object_name='sm',
-                                  function_name=f'{name}.entry', 
-                                  function_params=None, 
-                                  return_code=None,
-                                  function_type=FunctionType.state,
-                                  extra_flag=extra_flag)
-
-    def leave_state_slot(self, name, state_conversion):
-        extra_flag = None
-        if state_conversion == StateConversion.implicit:
-            extra_flag = state_conversion.capitalized_name
-
-        self.text_edit.append_log(object_name='sm',
-                                  function_name=f'{name}.exit', 
-                                  function_params=None, 
-                                  return_code=None,
-                                  function_type=FunctionType.state,
-                                  extra_flag=extra_flag)
-        
 
     def _save_conditions_allowed(self):
         conditions_allow = self.table_view_w_search.table_view._get_all_conditions_allowed()

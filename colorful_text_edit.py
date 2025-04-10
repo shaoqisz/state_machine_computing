@@ -42,8 +42,6 @@ class ColorfulTextEdit(QPlainTextEdit):
     def contextMenuEvent(self, event):
         self.parent().contextMenuEvent(event)
 
-
-
     def append_log_new_machine(self, machine_name, left_variable):
         self.appendHtml('<span style="color: #2ca20f; font-weight: bold;"> --------------------------- system restarted --------------------------- </span>')
         self.append_log(object_name=None, 
@@ -55,7 +53,7 @@ class ColorfulTextEdit(QPlainTextEdit):
     def add_separator(self):
         self.appendHtml('<span style="color: #2ca20f; font-weight: bold;"> --------------------------- user added separator --------------------------- </span>')
 
-    def append_log(self, object_name, function_name, function_params, return_code, left_variable=None, function_type:FunctionType = FunctionType.other, extra_flag=None):
+    def append_log(self, object_name, function_name, function_params=None, return_code=None, left_variable=None, function_type:FunctionType = FunctionType.other, extra_flag=None):
         now = datetime.datetime.now()
         timestamp = now.strftime(TIMESTAMP_FORMAT)
 
