@@ -1344,12 +1344,12 @@ class MainWindow(QMainWindow):
         timer.singleShot(100, self.state_machine._adjust_all_states)
 
     def trigger_name_slot(self, trigger):
-        self.text_edit.append_log(object_name='sm',
+        self.text_edit.append_log(object_name=self.config_page.config_name_combobox.currentText(),
                                   function_name=trigger, 
                                   function_type=FunctionType.trigger)
 
     def condition_message_slot(self, source_name, dest_name, function_name, return_code):
-        self.text_edit.append_log(object_name='sm',
+        self.text_edit.append_log(object_name=self.config_page.config_name_combobox.currentText(),
                                   function_name=function_name, 
                                   function_params=[source_name.split("_")[-1], dest_name.split("_")[-1]], 
                                   return_code=return_code,
@@ -1359,22 +1359,22 @@ class MainWindow(QMainWindow):
             self.state_machine.set_source_conditions_focus(source_name, dest_name, function_name)
 
     def enter_state_message_slot(self, source_name, dest_name, function_name):
-        self.text_edit.append_log(object_name='sm',
+        self.text_edit.append_log(object_name=self.config_page.config_name_combobox.currentText(),
                                   function_name=function_name, 
                                   function_type=FunctionType.state)
         
     def exit_state_message_slot(self, source_name, dest_name, function_name):
-        self.text_edit.append_log(object_name='sm',
+        self.text_edit.append_log(object_name=self.config_page.config_name_combobox.currentText(),
                                   function_name=function_name, 
                                   function_type=FunctionType.state)
         
     def state_machine_init_slot(self, state_name):
-        self.text_edit.append_log(object_name='sm',
+        self.text_edit.append_log(object_name=self.config_page.config_name_combobox.currentText(),
                                   function_name='set_initial_state', 
                                   function_params=[state_name])
         
     def new_state_machine_slot(self, sm_name):
-        self.text_edit.append_log_new_machine(sm_name, 'sm')
+        self.text_edit.append_log_new_machine(sm_name, self.config_page.config_name_combobox.currentText())
 
     def _save_conditions_allowed(self):
         conditions_allow = self.table_view_w_search.table_view._get_all_conditions_allowed()
