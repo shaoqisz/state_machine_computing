@@ -90,7 +90,7 @@ class StateMachineWidget(QWidget):
 
         self.focus_state = None
         self.focus_transition = None
-        self.last_current_state = None
+        self.current_state = None
 
         self.is_dragging_all = False
         self.skip_context_menu_event_once = True
@@ -174,7 +174,7 @@ class StateMachineWidget(QWidget):
         # print(f'current={self.model.state}') 
         for state in self.states:
             if self.model.state == self.get_full_path(state):
-                self.set_current_last_state(state, self.last_current_state)
+                self.set_current_last_state(state, None)
 
         self.update()
 
@@ -348,7 +348,7 @@ class StateMachineWidget(QWidget):
         self.update()
 
     def set_black_theme(self):
-        self.state_color = QColor('#2b2b2b')
+        self.state_color = QColor('#353333') #Qt.GlobalColor.black # QColor('#2b2b2b')
         self.opposite_color = Qt.GlobalColor.white
 
     
@@ -367,27 +367,17 @@ class StateMachineWidget(QWidget):
         self.update()
         self.transitions_timer_is_running = False
 
-    # def set_leave_enter_function(self, current, implicit=False):
-    #     for state in self.states:
-    #         if current == state:
-    #             if self.last_current_state is not state:
-    #                 if self.last_current_state is not None and self.last_current_state in self.states:
-    #                     self.leave_state_changed_signal.emit(self.get_full_path(self.last_current_state), implicit)
-
-    #                 self.last_current_state = state
-    #                 self.enter_state_changed_signal.emit(self.get_full_path(state), implicit)
-
     def set_leave_enter_function(self, current, state_conversion=StateConversion.explicit):
         if current is not None:
-            if self.last_current_state is not current:
-                if self.last_current_state is not None and self.last_current_state in self.states:
-                    self.leave_state_changed_signal.emit(self.get_full_path(self.last_current_state), state_conversion)
+            if self.current_state is not current:
+                if self.current_state is not None and self.current_state in self.states:
+                    self.leave_state_changed_signal.emit(self.get_full_path(self.current_state), state_conversion)
 
-                self.last_current_state = current
+                self.current_state = current
                 self.enter_state_changed_signal.emit(self.get_full_path(current), state_conversion)
 
-    def set_start_state(self, state):
-        self.last_current_state = state
+    # def set_start_state(self, state):
+    #     self.current_state = state
 
     def set_source_conditions_focus(self, source_name, dest_name, conditions):
         for key, data in self.merged_transitions.items():
@@ -401,8 +391,9 @@ class StateMachineWidget(QWidget):
             if source_full_name == source_name:
                 result = any(_conditions == conditions for _conditions in conditions_list)
                 if result is True:                    
-                    self.set_start_state(_source)
-
+                    # self.set_start_state(_source)
+                    # print(f'source={_source.name} current={self.current_state.name}')
+                    assert(_source == self.current_state)
                     if self.animation_enabled is True:
                         self.transitions_timer.singleShot(150,   lambda current=None,  last=_source:  self.set_current_last_state(current, last))
                         self.transitions_timer.singleShot(400,   lambda current=_dest, last=_source:  self.set_current_last_state(current, last))
@@ -410,7 +401,7 @@ class StateMachineWidget(QWidget):
                         self.transitions_timer.singleShot(850 ,  lambda current=_dest, last=None:     self.update_final_current_state())
                     else:
                         self.set_current_last_state(current=_dest, last=None)
-                        self.transitions_timer.singleShot(1 ,  lambda:self.update_final_current_state())
+                        self.transitions_timer.singleShot(0 ,  lambda:self.update_final_current_state())
 
                     self.transitions_timer_is_running = True
 
@@ -1056,9 +1047,9 @@ class StateMachineWidget(QWidget):
         try:
             if self.transitions_timer_is_running is True:
                 # print(f'transitions_timer_is_running={self.transitions_timer_is_running}')
-                self.warning_error_msg_box.setText('Slow down, it\'s processing.')
-                self.warning_error_msg_box.setWindowTitle('Oops')
-                self.warning_error_msg_box.exec()
+                # self.warning_error_msg_box.setText('Slow down, it\'s processing.')
+                # self.warning_error_msg_box.setWindowTitle('Oops')
+                # self.warning_error_msg_box.exec()
                 return
 
             self.trigger_name_signal.emit(trigger)
@@ -1443,7 +1434,8 @@ class MainWindow(QMainWindow):
         self.config_page.setStyleSheet(style_sheet)
         self.setStyleSheet(style_sheet)
 
-        self.set_state_machine_white_theme()
+        self.sm_border_widget.setStyleSheet("border: 2px solid gray; border-radius: 5px; background: white;")
+        self.state_machine.set_white_theme()
     
     def set_black_theme(self):
         style_sheet = """
@@ -1529,15 +1521,10 @@ class MainWindow(QMainWindow):
         self.config_page.setStyleSheet(style_sheet)
         self.setStyleSheet(style_sheet)
 
-        self.set_state_machine_black_theme()
-
-    def set_state_machine_black_theme(self):
         self.sm_border_widget.setStyleSheet("border: 2px solid gray; border-radius: 5px; background: black;")
+        # self.sm_border_widget.setStyleSheet("border: 2px solid gray; border-radius: 5px; background: #2b2b2b;")
         self.state_machine.set_black_theme()
 
-    def set_state_machine_white_theme(self):
-        self.sm_border_widget.setStyleSheet("border: 2px solid gray; border-radius: 5px; background: white;")
-        self.state_machine.set_white_theme()
 
     def open_config_page(self):
         self.config_page.show()
