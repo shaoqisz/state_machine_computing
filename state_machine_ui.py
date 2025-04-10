@@ -64,6 +64,8 @@ class StateMachineWidget(QWidget):
 
     def __init__(self, icon=None):
         super().__init__()
+        
+        self.original_matter_attributes = set(dir(Matter))
 
         self.icon = icon
 
@@ -114,8 +116,19 @@ class StateMachineWidget(QWidget):
         # print(f'animation_enabled={animation_enabled}')
         self.animation_enabled = animation_enabled
 
+    def remove_all_new_matter_method(self):
+        current_matter_attributes = set(dir(Matter))
+        new_matter_attributes = current_matter_attributes - self.original_matter_attributes
+        if new_matter_attributes:
+            for attr in new_matter_attributes:
+                if callable(getattr(Matter, attr)):
+                    print(f'del matter\'s attr={attr}')
+                    delattr(Matter, attr)
+
     def reload_config(self, config_name, STATES_CONFIG, TRANSITIONS_CONFIG_FOLDER):
         try:
+            self.remove_all_new_matter_method()
+
             # reset the offset when reload, scale can be remained
             self.offset_x = 0
             self.offset_y = 0
