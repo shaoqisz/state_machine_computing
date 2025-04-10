@@ -213,14 +213,24 @@ class StateMachineWidget(QWidget):
 
         if parent_path is None:
             parent_path = []
+
         initial_key = 'initial'
 
         for state_data in state_list:
             if isinstance(state_data, dict):
                 current_parent_path = parent_path + [state_data['name']]
                 if initial_key in state_data:
-                    current_parent_path = current_parent_path + [state_data[initial_key]]
-                    return '_'.join(current_parent_path)
+                    initial_state_name = state_data[initial_key]
+                    # 查找初始状态对应的子状态字典
+                    child_state_dict = next((child for child in state_data.get('children', [])
+                                             if isinstance(child, dict) and child.get('name') == initial_state_name), None)
+                    if child_state_dict:
+                        # 递归查找子状态的初始状态
+                        result = self._find_the_1st_initial_state([child_state_dict], current_parent_path)
+                        if result:
+                            return result
+                    # 如果没有子状态或者没找到对应子状态字典，返回当前路径加上初始状态名
+                    return '_'.join(current_parent_path + [initial_state_name])
 
                 children = state_data.get('children', [])
                 result = self._find_the_1st_initial_state(children, current_parent_path)
@@ -228,6 +238,7 @@ class StateMachineWidget(QWidget):
                     return result
 
         return None
+
 
     def _build_states(self, state_list, parent=None):
         for i, state_data in enumerate(state_list):
