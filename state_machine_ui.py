@@ -43,6 +43,8 @@ class State:
         self.color = None
         self.name_rect = None
 
+        self.enter_list = None
+        self.exit_list = None
 
 # class StateConversion(Enum):
 #     explicit = 0
@@ -272,12 +274,18 @@ class StateMachineWidget(QWidget):
                     if isinstance(exit_state_func_names, list):
                         for exit_state_func_name in exit_state_func_names:
                             self.setup_exit_state_function(exit_state_func_name)
+
                 elif self.enable_default_exit is True:
                     default_exit_state_func_name = f'{full_path}::default_exit'
                     state_data['on_exit'] = [default_exit_state_func_name]
                     # print(f'default_exit_state_func_name={default_exit_state_func_name}')
                     self.setup_exit_state_function(default_exit_state_func_name)
 
+                if 'on_enter' in state_data:
+                    state.enter_list = state_data['on_enter']
+
+                if 'on_exit' in state_data:
+                    state.exit_list = state_data['on_exit']
                 
                 children = state_data.get('children', [])
                 self._build_states(children, state)
@@ -296,12 +304,14 @@ class StateMachineWidget(QWidget):
                 if self.enable_default_enter is True:
                     default_enter_state_func_name = f'{full_path}::default_enter'
                     state_dict['on_enter'] = [default_enter_state_func_name]
+                    state.enter_list = [default_enter_state_func_name]
                     # print(f'default_enter_state_func_name={default_enter_state_func_name}')
                     self.setup_enter_state_function(default_enter_state_func_name)
 
                 if self.enable_default_exit is True:
                     default_exit_state_func_name = f'{full_path}::default_exit'
                     state_dict['on_exit'] = [default_exit_state_func_name]
+                    state.exit_list =  [default_exit_state_func_name]
                     # print(f'default_exit_state_func_name={default_exit_state_func_name}')
                     self.setup_exit_state_function(default_exit_state_func_name)
 
@@ -674,7 +684,7 @@ class StateMachineWidget(QWidget):
             self.skip_context_menu_event_once = False
             return
 
-        state = self.inside_the_state(event.x(), event.y())
+        state : State = self.inside_the_state(event.x(), event.y())
         if state is not None:
             menu = QMenu(self)
 
@@ -685,6 +695,30 @@ class StateMachineWidget(QWidget):
 
             copy_state_name_action = menu.addAction("Copy State Name")
             copy_state_name_action.triggered.connect(lambda b, name=state.name: self.copy_name_from_menu_slot(b, name))
+
+            menu.addSeparator()
+
+            if state.enter_list is not None:
+                gate_menu = QMenu('Enter Gates', self)
+                menu.addMenu(gate_menu)
+
+                for i, enter_name in enumerate(state.enter_list):
+                    gate_name_menu = QMenu(enter_name, self)
+                    gate_menu.addMenu(gate_name_menu)
+
+                    copy_gate_name_action = gate_name_menu.addAction("Copy")
+                    copy_gate_name_action.triggered.connect(lambda b, name=enter_name: self.copy_name_from_menu_slot(b, name))
+
+            if state.exit_list is not None:
+                gate_menu = QMenu('Exit Gates', self)
+                menu.addMenu(gate_menu)
+
+                for i, enter_name in enumerate(state.exit_list):
+                    gate_name_menu = QMenu(enter_name, self)
+                    gate_menu.addMenu(gate_name_menu)
+
+                    copy_gate_name_action = gate_name_menu.addAction("Copy")
+                    copy_gate_name_action.triggered.connect(lambda b, name=enter_name: self.copy_name_from_menu_slot(b, name))
 
             menu.exec_(event.globalPos())
             return
