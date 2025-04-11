@@ -765,12 +765,6 @@ class StateMachineWidget(QWidget):
         self.set_init_state(name)
 
     def trigger_slot(self, b, name):
-        # print(f'trigger_slot name = {name}')
-
-        # to clear all the focus
-        self.focus_transition = None
-        self.focus_state = None
-
         self.trigger_transition(name)
 
     def inside_the_state(self, x, y):
@@ -1132,6 +1126,10 @@ class StateMachineWidget(QWidget):
         return full_path
 
     def trigger_transition(self, trigger):
+        # to clear all the focus
+        self.focus_transition = None
+        self.focus_state = None
+
         try:
             if self.transitions_timer_is_running is True:
                 # print(f'transitions_timer_is_running={self.transitions_timer_is_running}')
