@@ -248,6 +248,8 @@ class StateMachineWidget(QWidget):
         for i, state_data in enumerate(state_list):
             if isinstance(state_data, dict):
                 name:str = state_data['name']
+                state = State(name, parent=parent)
+                full_path = self.get_full_path(state)
 
                 if '_' in name:
                     raise Exception(f'Found the underline in the state name `{name}`, which is not allowed.')
@@ -259,7 +261,7 @@ class StateMachineWidget(QWidget):
                         for enter_state_func_name in enter_state_func_names:
                             self.setup_enter_state_function(enter_state_func_name)
                 elif self.enable_default_enter is True:
-                    default_enter_state_func_name = f'{name}_default_enter'
+                    default_enter_state_func_name = f'{full_path}::default_enter'
                     state_data['on_enter'] = [default_enter_state_func_name]
                     # print(f'default_enter_state_func_name={default_enter_state_func_name}')
                     self.setup_enter_state_function(default_enter_state_func_name)
@@ -271,36 +273,37 @@ class StateMachineWidget(QWidget):
                         for exit_state_func_name in exit_state_func_names:
                             self.setup_exit_state_function(exit_state_func_name)
                 elif self.enable_default_exit is True:
-                    default_exit_state_func_name = f'{name}_default_exit'
+                    default_exit_state_func_name = f'{full_path}::default_exit'
                     state_data['on_exit'] = [default_exit_state_func_name]
                     # print(f'default_exit_state_func_name={default_exit_state_func_name}')
-                    self.setup_enter_state_function(default_exit_state_func_name)
+                    self.setup_exit_state_function(default_exit_state_func_name)
 
+                
                 children = state_data.get('children', [])
-                state = State(name, parent=parent)
                 self._build_states(children, state)
                 state.children = [child for child in self.states if child.parent == state]
                 self.states.append(state)
             elif isinstance(state_data, str):
                 name:str = state_data
+                state = State(name, parent=parent)
+                full_path = self.get_full_path(state)
 
                 state_dict = {"name": state_data}
                 state_list[i] = state_dict
 
-                state = State(name, parent=parent)
                 self.states.append(state)
 
                 if self.enable_default_enter is True:
-                    default_enter_state_func_name = f'{name}_default_enter'
+                    default_enter_state_func_name = f'{full_path}::default_enter'
                     state_dict['on_enter'] = [default_enter_state_func_name]
                     # print(f'default_enter_state_func_name={default_enter_state_func_name}')
                     self.setup_enter_state_function(default_enter_state_func_name)
 
                 if self.enable_default_exit is True:
-                    default_exit_state_func_name = f'{name}_default_exit'
+                    default_exit_state_func_name = f'{full_path}::default_exit'
                     state_dict['on_exit'] = [default_exit_state_func_name]
                     # print(f'default_exit_state_func_name={default_exit_state_func_name}')
-                    self.setup_enter_state_function(default_exit_state_func_name)
+                    self.setup_exit_state_function(default_exit_state_func_name)
 
     def _layout_states(self):
         default_w = 200
