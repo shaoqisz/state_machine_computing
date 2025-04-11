@@ -20,14 +20,24 @@ from colorful_text_edit import ColorfulTextEdit, FunctionType
 from text_edit_search import TextEditSearch
 
 
-# 定义不同层级的拖动锚点颜色
-LEVEL_COLORS = [
+LEVEL_COLORS_WHITE_THEME = [
     Qt.GlobalColor.red,
     Qt.GlobalColor.darkGreen,
     Qt.GlobalColor.blue,
-    Qt.GlobalColor.darkYellow,
-    Qt.GlobalColor.black,
+    Qt.GlobalColor.magenta,
+    Qt.GlobalColor.darkBlue,
     Qt.GlobalColor.darkGray,
+    Qt.GlobalColor.darkRed,
+    Qt.GlobalColor.darkMagenta,
+]
+
+LEVEL_COLORS_BLACK_THEME = [
+    Qt.GlobalColor.red,
+    Qt.GlobalColor.darkGreen,
+    Qt.GlobalColor.magenta,
+    Qt.GlobalColor.darkYellow,
+    Qt.GlobalColor.darkMagenta,
+    Qt.GlobalColor.darkRed,
 ]
 
 class State:
@@ -71,8 +81,7 @@ class StateMachineWidget(QWidget):
 
         self.icon = icon
 
-        self.state_color = Qt.GlobalColor.white
-        self.opposite_color = Qt.GlobalColor.black
+        self.set_white_theme()
 
         self.rect_2_name_margin = 10
 
@@ -427,11 +436,13 @@ class StateMachineWidget(QWidget):
     def set_black_theme(self):
         self.state_color = QColor('#353333') #Qt.GlobalColor.black # QColor('#2b2b2b')
         self.opposite_color = Qt.GlobalColor.white
+        self.level_colors = LEVEL_COLORS_BLACK_THEME
 
     
     def set_white_theme(self):
         self.state_color = Qt.GlobalColor.white
         self.opposite_color = Qt.GlobalColor.black
+        self.level_colors = LEVEL_COLORS_WHITE_THEME
 
     def update_final_current_state(self):
 
@@ -489,9 +500,9 @@ class StateMachineWidget(QWidget):
             painter.drawRoundedRect(round(x), round(y), round(w), round(h), radius, radius)
         
         # 2. 绘制名字矩形
-        color_index = min(state.level, len(LEVEL_COLORS) - 1)
-        state.color = LEVEL_COLORS[color_index]
-        painter.setBrush(LEVEL_COLORS[color_index])
+        color_index = min(state.level, len(self.level_colors) - 1)
+        state.color = self.level_colors[color_index]
+        painter.setBrush(self.level_colors[color_index])
         painter.drawRect(*state.name_rect)
 
         # 3. 绘制状态名
