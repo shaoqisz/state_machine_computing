@@ -122,7 +122,7 @@ class StateMachineWidget(QWidget):
         if new_matter_attributes:
             for attr in new_matter_attributes:
                 if callable(getattr(Matter, attr)):
-                    print(f'del matter\'s attr={attr}')
+                    # print(f'del matter\'s attr={attr}')
                     delattr(Matter, attr)
 
     def reload_config(self, config_name, STATES_CONFIG, TRANSITIONS_CONFIG_FOLDER, enable_default_enter, enable_default_exit):
@@ -1513,14 +1513,13 @@ class MainWindow(QMainWindow):
             QComboBox {
                 background-color: white;
                 border: 1px solid #ccc;
-                padding: 3px 3px;
+                padding: 3px 6px;
                 border-radius: 8px;
                 font-size: 12px;
                 min-height: 18px;
                 color: #333;
             }
             QComboBox:hover {
-                background-color: #f5f5f5;
                 border: 2px solid #999;
             }
             QComboBox:disabled {
@@ -1660,14 +1659,13 @@ class MainWindow(QMainWindow):
             QComboBox {
                 background-color: #353333;
                 border: 1px solid #666;
-                padding: 3px 3px;
+                padding: 3px 6px;
                 border-radius: 8px;
                 font-size: 12px;
                 min-height: 18px;
                 color: white;
             }
             QComboBox:hover {
-                background-color: #444;
                 border: 2px solid #888;
             }
             QComboBox:disabled {

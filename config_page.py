@@ -103,7 +103,7 @@ class ConfigPage(QWidget):
         self.enable_default_exit_checkbox = QCheckBox("Default exit()")
         default_gate_widget.layout().addWidget(self.enable_default_enter_checkbox)
         default_gate_widget.layout().addWidget(self.enable_default_exit_checkbox)
-        default_gate_widget.setToolTip('Default gates only synthesized when not specified')
+        default_gate_widget.setToolTip('Default gates only synthesized when no one was specified')
         default_gate_widget.setMaximumHeight(36)
 
         layout.addWidget(QLabel('Default Gate'), row, column)
@@ -122,7 +122,7 @@ class ConfigPage(QWidget):
 
         self.setLayout(main_layout)
 
-        self.resize(700, 150)
+        # self.resize(700, 150)
 
 
     def connect_signal_and_slot(self):
