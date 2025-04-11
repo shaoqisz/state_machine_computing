@@ -125,7 +125,7 @@ class StateMachineWidget(QWidget):
                     print(f'del matter\'s attr={attr}')
                     delattr(Matter, attr)
 
-    def reload_config(self, config_name, STATES_CONFIG, TRANSITIONS_CONFIG_FOLDER):
+    def reload_config(self, config_name, STATES_CONFIG, TRANSITIONS_CONFIG_FOLDER, enable_default_enter, enable_default_exit):
         try:
             self.remove_all_new_matter_method()
 
@@ -137,6 +137,10 @@ class StateMachineWidget(QWidget):
 
             self.STATES_CONFIG = STATES_CONFIG
             self.TRANSITIONS_CONFIG_FOLDER = TRANSITIONS_CONFIG_FOLDER
+            
+            self.enable_default_enter = enable_default_enter
+            self.enable_default_exit = enable_default_exit
+
             self.font.setPointSize(10)
 
             self.merged_transitions = {}
@@ -254,8 +258,8 @@ class StateMachineWidget(QWidget):
                     if isinstance(enter_state_func_names, list):
                         for enter_state_func_name in enter_state_func_names:
                             self.setup_enter_state_function(enter_state_func_name)
-                else:
-                    default_enter_state_func_name = f'{name}_default_entry'
+                elif self.enable_default_enter is True:
+                    default_enter_state_func_name = f'{name}_default_enter'
                     state_data['on_enter'] = [default_enter_state_func_name]
                     # print(f'default_enter_state_func_name={default_enter_state_func_name}')
                     self.setup_enter_state_function(default_enter_state_func_name)
@@ -266,7 +270,7 @@ class StateMachineWidget(QWidget):
                     if isinstance(exit_state_func_names, list):
                         for exit_state_func_name in exit_state_func_names:
                             self.setup_exit_state_function(exit_state_func_name)
-                else:
+                elif self.enable_default_exit is True:
                     default_exit_state_func_name = f'{name}_default_exit'
                     state_data['on_exit'] = [default_exit_state_func_name]
                     # print(f'default_exit_state_func_name={default_exit_state_func_name}')
@@ -286,15 +290,17 @@ class StateMachineWidget(QWidget):
                 state = State(name, parent=parent)
                 self.states.append(state)
 
-                default_enter_state_func_name = f'{name}_default_entry'
-                state_dict['on_enter'] = [default_enter_state_func_name]
-                # print(f'default_enter_state_func_name={default_enter_state_func_name}')
-                self.setup_enter_state_function(default_enter_state_func_name)
+                if self.enable_default_enter is True:
+                    default_enter_state_func_name = f'{name}_default_enter'
+                    state_dict['on_enter'] = [default_enter_state_func_name]
+                    # print(f'default_enter_state_func_name={default_enter_state_func_name}')
+                    self.setup_enter_state_function(default_enter_state_func_name)
 
-                default_exit_state_func_name = f'{name}_default_exit'
-                state_dict['on_exit'] = [default_exit_state_func_name]
-                # print(f'default_exit_state_func_name={default_exit_state_func_name}')
-                self.setup_enter_state_function(default_exit_state_func_name)
+                if self.enable_default_exit is True:
+                    default_exit_state_func_name = f'{name}_default_exit'
+                    state_dict['on_exit'] = [default_exit_state_func_name]
+                    # print(f'default_exit_state_func_name={default_exit_state_func_name}')
+                    self.setup_enter_state_function(default_exit_state_func_name)
 
     def _layout_states(self):
         default_w = 200
@@ -1231,7 +1237,9 @@ class MainWindow(QMainWindow):
 
         self.state_machine.reload_config(self.config_page.config_name_combobox.currentText(),
                                          self.config_page.main_resource_input.text(), 
-                                         self.config_page.secondary_resource_input.text())
+                                         self.config_page.secondary_resource_input.text(),
+                                         self.config_page.enable_default_enter_checkbox.isChecked(),
+                                         self.config_page.enable_default_exit_checkbox.isChecked())
         
         self.state_machine.set_animation(bool(self.config_page.animation_options.currentIndex()))
 
@@ -1420,7 +1428,9 @@ class MainWindow(QMainWindow):
         self.state_machine._save_state_positions()
         self.state_machine.reload_config(self.config_page.config_name_combobox.currentText(),
                                          self.config_page.main_resource_input.text(), 
-                                         self.config_page.secondary_resource_input.text())
+                                         self.config_page.secondary_resource_input.text(),
+                                         self.config_page.enable_default_enter_checkbox.isChecked(),
+                                         self.config_page.enable_default_exit_checkbox.isChecked())
 
         if self.state_machine.json_transitions is not None:
             self.table_view_w_search.set_transitions(self.config_page.config_name_combobox.currentText(), self.state_machine.json_transitions)

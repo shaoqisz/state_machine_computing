@@ -26,6 +26,8 @@ class ConfigPage(QWidget):
         self.initUI()
         self.load_config()
 
+        self.connect_signal_and_slot()
+
     def initUI(self):
 
         self.setWindowTitle("Configure")
@@ -93,6 +95,23 @@ class ConfigPage(QWidget):
 
         row += 1
         column = 0
+
+        default_gate_widget = QWidget()
+        default_gate_widget.setLayout(QHBoxLayout())
+        default_gate_widget.layout().setContentsMargins(0,0,0,0)
+        self.enable_default_enter_checkbox = QCheckBox("Default enter()")
+        self.enable_default_exit_checkbox = QCheckBox("Default exit()")
+        default_gate_widget.layout().addWidget(self.enable_default_enter_checkbox)
+        default_gate_widget.layout().addWidget(self.enable_default_exit_checkbox)
+        default_gate_widget.setToolTip('Default gates only synthesized when not specified')
+        default_gate_widget.setMaximumHeight(36)
+
+        layout.addWidget(QLabel('Default Gate'), row, column)
+        column += 1
+        layout.addWidget(default_gate_widget, row, column)
+
+        row += 1
+        column = 0
         self.theme_options = QComboBox()
         self.theme_options.addItems(['White', 'Black'])
         layout.addWidget(QLabel('Theme'), row, column)
@@ -105,6 +124,8 @@ class ConfigPage(QWidget):
 
         self.resize(700, 150)
 
+
+    def connect_signal_and_slot(self):
         self.main_resource_button.clicked.connect(self.select_main_resource)
         self.add_config_button.clicked.connect(self.add_new_config)
         self.delete_config_button.clicked.connect(self.delete_current_config)
@@ -113,6 +134,15 @@ class ConfigPage(QWidget):
         self.animation_options.currentIndexChanged.connect(lambda enabled=bool(self.animation_options.currentIndex()): self.animation_changed_signal.emit(enabled))
 
         self.theme_options.currentIndexChanged.connect(self.theme_options_changed)
+
+        self.enable_default_enter_checkbox.stateChanged.connect(self.enable_default_gate_checkbox_changed)
+        self.enable_default_exit_checkbox.stateChanged.connect(self.enable_default_gate_checkbox_changed)
+
+    def enable_default_gate_checkbox_changed(self, state):
+        reply = QMessageBox.question(self, 'Reminder', f'This setting must to reload config to take effect. Do you want to reload it now?',
+                                        QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            self.config_changed_signal.emit()
 
     def theme_options_changed(self, index):
         theme = Theme(index)
@@ -171,6 +201,10 @@ class ConfigPage(QWidget):
                 "configs": self.configs,
                 "current_config": current_config_name,
                 "animation_enabled": self.animation_options.currentIndex(),
+
+                "enable_default_enter": self.enable_default_enter_checkbox.isChecked(),
+                "enable_default_exit": self.enable_default_exit_checkbox.isChecked(),
+
                 "current_theme": self.theme_options.currentIndex()
             }
             with open("config.json", "w") as f:
@@ -183,10 +217,20 @@ class ConfigPage(QWidget):
                 self.configs = data.get("configs", {})
                 current_config = data.get("current_config")
                 animation_enabled = data.get("animation_enabled")
+
+                enable_default_enter = data.get("enable_default_enter")
+                enable_default_exit = data.get("enable_default_exit")
+
                 current_theme = data.get("current_theme")
 
             if animation_enabled:
                 self.animation_options.setCurrentIndex(animation_enabled)
+
+            if enable_default_enter:
+                self.enable_default_enter_checkbox.setChecked(enable_default_enter)
+
+            if enable_default_exit:
+                self.enable_default_exit_checkbox.setChecked(enable_default_exit)
 
             if current_theme:
                 self.theme_options.setCurrentIndex(current_theme)
