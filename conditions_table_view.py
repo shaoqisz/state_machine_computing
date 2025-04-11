@@ -112,6 +112,7 @@ class RecursiveFilterProxyModel(QSortFilterProxyModel):
 class MyTableView(QTableView):
     condition_allowed_changed = pyqtSignal(str, str)
     focus_signal = pyqtSignal(FunctionType, list)
+    init_state_signal = pyqtSignal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -238,6 +239,11 @@ class MyTableView(QTableView):
             focus_action = menu.addAction("Focus")
             focus_action.triggered.connect(lambda: self.focus_item_text(index, column))
 
+        menu.addSeparator()
+
+        if column == 0 or column == 3:
+            init_state_action = menu.addAction("Initial state")
+            init_state_action.triggered.connect(lambda: self.init_state_item_text(index, column))
 
         # 4. 显示菜单（可根据列禁用某些操作）
         if column == 0:  # 第一列禁用某些操作示例
@@ -270,6 +276,19 @@ class MyTableView(QTableView):
                 self.focus_signal.emit(FunctionType.state, [row_data[0]])
             else:
                 self.focus_signal.emit(FunctionType.state, [current_text])
+
+    def init_state_item_text(self, index, column):
+        source_index = self.proxy_model.mapToSource(index)
+        current_text = self.table_model.itemData(source_index)[0]
+
+        row_data = self.get_selected_row()
+        if column == 0 or column == 3:
+            if current_text == '-':
+                self.init_state_signal.emit(row_data[0])
+                print(f'init_state_signal={row_data[0]}')
+            else:
+                self.init_state_signal.emit(current_text)
+                print(f'init_state_signal={current_text}')
 
     def __setupTableView(self):
         self.table_model.clear()

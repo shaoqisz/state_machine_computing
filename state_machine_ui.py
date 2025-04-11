@@ -688,18 +688,18 @@ class StateMachineWidget(QWidget):
         if state is not None:
             menu = QMenu(self)
 
-            init_action = menu.addAction("Initial State")
-            init_action.triggered.connect(lambda b, name=self.get_full_path(state): self.init_state_slot(b, name))
-
-            menu.addSeparator()
-
-            copy_state_name_action = menu.addAction("Copy State Name")
+            copy_state_name_action = menu.addAction("Copy state name")
             copy_state_name_action.triggered.connect(lambda b, name=state.name: self.copy_name_from_menu_slot(b, name))
 
             menu.addSeparator()
 
+            init_action = menu.addAction("Initial state")
+            init_action.triggered.connect(lambda b, name=self.get_full_path(state): self.init_state_slot(name))
+
+            menu.addSeparator()
+
             if state.enter_list is not None:
-                gate_menu = QMenu('Enter Gates', self)
+                gate_menu = QMenu('Enter gates', self)
                 menu.addMenu(gate_menu)
 
                 for i, enter_name in enumerate(state.enter_list):
@@ -710,7 +710,7 @@ class StateMachineWidget(QWidget):
                     copy_gate_name_action.triggered.connect(lambda b, name=enter_name: self.copy_name_from_menu_slot(b, name))
 
             if state.exit_list is not None:
-                gate_menu = QMenu('Exit Gates', self)
+                gate_menu = QMenu('Exit gates', self)
                 menu.addMenu(gate_menu)
 
                 for i, enter_name in enumerate(state.exit_list):
@@ -738,19 +738,19 @@ class StateMachineWidget(QWidget):
                 trigger_it_action.triggered.connect(lambda b, name=trigger: self.trigger_slot(b, name))
 
                 if len(triggers_list) > 1:
-                    copy_trigger_action = sub_menu.addAction("Copy Trigger Name")
+                    copy_trigger_action = sub_menu.addAction("Copy trigger name")
                     copy_trigger_action.triggered.connect(lambda b, name=trigger: self.copy_name_from_menu_slot(b, name))
 
-                    copy_condition_action = sub_menu.addAction("Copy Condition Name")
+                    copy_condition_action = sub_menu.addAction("Copy condition name")
                     copy_condition_action.triggered.connect(lambda b, name=conditions_list[i]: self.copy_name_from_menu_slot(b, name))
 
             menu.addSeparator()
             
-            copy_triggers_action = menu.addAction("Copy Triggers Name")
+            copy_triggers_action = menu.addAction("Copy triggers name")
             copy_triggers_action.triggered.connect(lambda b, name=triggers: self.copy_name_from_menu_slot(b, name))
 
             conditions = "|".join(conditions_list)
-            copy_conditions_action = menu.addAction("Copy Conditions Name")
+            copy_conditions_action = menu.addAction("Copy conditions name")
             copy_conditions_action.triggered.connect(lambda b, name=conditions: self.copy_name_from_menu_slot(b, name))
 
             menu.exec_(event.globalPos())
@@ -760,7 +760,7 @@ class StateMachineWidget(QWidget):
         clipboard = QApplication.clipboard()
         clipboard.setText(name)
 
-    def init_state_slot(self, b, name):
+    def init_state_slot(self, name):
         # print(f'set_init_state name = {name}')
         self.set_init_state(name)
 
@@ -1390,6 +1390,7 @@ class MainWindow(QMainWindow):
         # self.table_view_w_search.init_state_signal.connect(self.init_state_slot)
         self.table_view_w_search.table_view.condition_allowed_changed.connect(self.state_machine.setup_conditions_allowed_slot)
         self.table_view_w_search.table_view.focus_signal.connect(self.state_machine.focus_slot)
+        self.table_view_w_search.table_view.init_state_signal.connect(self.state_machine.init_state_slot)
 
         self.add_separator_btn.clicked.connect(lambda:self.text_edit.add_separator())
         self.clear_btn.clicked.connect(lambda: self.text_edit.clear())
