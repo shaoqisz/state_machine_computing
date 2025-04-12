@@ -19,6 +19,8 @@ from config_page import ConfigPage, Theme
 from colorful_text_edit import ColorfulTextEdit, FunctionType
 from text_edit_search import TextEditSearch
 
+from state_machine_json_viewer import StateMachineJsonViewer
+
 
 LEVEL_COLORS_WHITE_THEME = [
     Qt.GlobalColor.red,
@@ -1260,6 +1262,8 @@ class MainWindow(QMainWindow):
         self.setWindowIcon(QIcon('sm.png'))
         self.settings = QSettings("Philips", app_name)
 
+        self.json_viewer = StateMachineJsonViewer()
+
         self.sm_border_widget = QWidget(self)
         self.sm_border_widget.setLayout(QVBoxLayout())
 
@@ -1299,7 +1303,11 @@ class MainWindow(QMainWindow):
                 self.state_machine.setup_conditions_allowed_slot(condition, 'Yes')
         else:
             self.table_view_w_search.clear_transitions()
+        
         self._load_conditions_allowed()
+
+        if self.state_machine.json_states is not None:
+            self.json_viewer.set_json_data(self.state_machine.json_states)
 
         # theme
         self.set_theme(Theme(self.config_page.theme_options.currentIndex()))
@@ -1365,6 +1373,12 @@ class MainWindow(QMainWindow):
 
         ####
 
+        self.upper_hor_spliter = QSplitter(Qt.Horizontal, self)
+        self.upper_hor_spliter.setObjectName("upper_hor_spliter")
+        self.upper_hor_spliter.addWidget(self.sm_border_widget)
+        self.upper_hor_spliter.addWidget(self.json_viewer)
+
+
         self.hor_spliter = QSplitter(Qt.Horizontal, self)
         self.hor_spliter.setObjectName("hor_spliter")
 
@@ -1372,7 +1386,7 @@ class MainWindow(QMainWindow):
         self.hor_spliter.addWidget(self.right_widget)
         ################
 
-        self.vert_spliter.addWidget(self.sm_border_widget)
+        self.vert_spliter.addWidget(self.upper_hor_spliter)
         self.vert_spliter.addWidget(self.hor_spliter)
 
         main_widget.layout().addWidget(self.vert_spliter)
@@ -1489,15 +1503,21 @@ class MainWindow(QMainWindow):
 
         self._load_conditions_allowed()
 
+        if self.state_machine.json_states is not None:
+            self.json_viewer.set_json_data(self.state_machine.json_states)
+
+
     def set_theme(self, current_theme):
         # print(f'current_theme={current_theme}')
         if current_theme == Theme.black:
             self.text_edit_search.set_black_theme()
             self.table_view_w_search.table_view.set_black_theme()
+            self.json_viewer.set_black_theme()
             self.set_black_theme()
         elif current_theme == Theme.white:
             self.text_edit_search.set_white_theme()
             self.table_view_w_search.table_view.set_white_theme()
+            self.json_viewer.set_white_theme()
             self.set_white_theme()
 
     def set_white_theme(self):
@@ -1800,6 +1820,7 @@ class MainWindow(QMainWindow):
         # splitter
         self.settings.setValue(self.vert_spliter.objectName(), self.vert_spliter.saveState())
         self.settings.setValue(self.hor_spliter.objectName(), self.hor_spliter.saveState())
+        self.settings.setValue(self.upper_hor_spliter.objectName(), self.upper_hor_spliter.saveState())
 
         # child widget settings
         self.state_machine.save_settings(self.settings)
@@ -1818,6 +1839,10 @@ class MainWindow(QMainWindow):
         splitter_state = self.settings.value(self.hor_spliter.objectName())
         if splitter_state:
             self.hor_spliter.restoreState(splitter_state)
+
+        splitter_state = self.settings.value(self.upper_hor_spliter.objectName())
+        if splitter_state:
+            self.upper_hor_spliter.restoreState(splitter_state)
 
         # child widget settings
         self.state_machine.load_settings(self.settings)
