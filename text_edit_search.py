@@ -133,6 +133,22 @@ class TextEditSearch(QWidget):
                                 background: white; color: black; border: 1px solid gray;
                                 border-radius: 8px;
                             }
+
+                           QScrollBar:vertical {
+                                background-color: rgba(255, 250, 255, 0.6);
+                                border: 2px solid rgba(255, 255, 255, 0.5);
+                                border-radius: 8px;
+                            }
+                           QScrollBar::handle:vertical {
+                                background: #cccccc;
+                                margin: 20px 0;
+                                min-height: 10px;
+                            }
+                            QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical {
+                                width: 3px;
+                                height: 3px;
+                            }
+
                             QPushButton {
                                 background-color: rgba(0, 150, 180, 0.6);
                                 color: white;
@@ -339,10 +355,13 @@ class MainWindow(QWidget):
         text_edit_search = TextEditSearch(text_edit=None)
         layout.addWidget(text_edit_search)
 
+        # text_edit_search.set_black_theme()
+        text_edit_search.set_white_theme()
+
         self.setLayout(layout)
 
         self.setWindowTitle('TextEditSearch')
-        self.setGeometry(300, 200, 600, 800)
+        # self.setGeometry(300, 200, 600, 800)
         self.show()
 
 if __name__ == '__main__':
