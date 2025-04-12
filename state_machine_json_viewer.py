@@ -1,8 +1,12 @@
 import sys
 import json
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QTreeWidget, QTreeWidgetItem, QMenu, QInputDialog, QMessageBox, QHeaderView, QAbstractItemView
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QTreeWidget, QTreeWidgetItem, QFileDialog, QMenu, QInputDialog, QMessageBox, QHeaderView, QAbstractItemView
+from PyQt5.QtCore import Qt, QSettings, QPointF, QEvent, pyqtSignal, QTimer
 
 class StateMachineJsonViewer(QWidget):
+    state_added_signal = pyqtSignal(list)
+    state_removed_signal = pyqtSignal(list)
+
     def __init__(self, json_data=None):
         super().__init__()
 
@@ -107,11 +111,7 @@ class StateMachineJsonViewer(QWidget):
         self.tree.customContextMenuRequested.connect(self.show_context_menu)
         self.tree.itemDoubleClicked.connect(self.edit_item)
 
-        save_button = QPushButton('Save')
-        save_button.clicked.connect(self.save_as_json)
-
         layout.addWidget(self.tree)
-        # layout.addWidget(save_button)
 
         layout.setContentsMargins(0,0,0,0)
 
@@ -144,69 +144,72 @@ class StateMachineJsonViewer(QWidget):
         return parent
 
     def show_context_menu(self, position):
-        item = self.tree.itemAt(position)
-        if item is None:
-            return
-
         menu = QMenu(self)
 
-        is_digit = self.is_digit_item(item)
-        has_children = self.has_property(item, 'children')
+        item = self.tree.itemAt(position)
+        if item is not None:
 
-        has_on_enter = self.has_property(item, 'on_enter')
-        has_on_exit = self.has_property(item, 'on_exit')
+            is_digit = self.is_digit_item(item)
+            has_children = self.has_property(item, 'children')
 
-        parent_is_children_none = self.parent_is_children_none(item)
+            has_on_enter = self.has_property(item, 'on_enter')
+            has_on_exit = self.has_property(item, 'on_exit')
 
-        name_to_set_initial = ''
-        parent_to_set_initial = None
-        if item.text(0) == 'name': 
-            parent_to_set_initial = self.get_parent(item, 3) # item.parent().parent().parent()
+            parent_is_children_none = self.parent_is_children_none(item)
+
+            name_to_set_initial = ''
+            parent_to_set_initial = None
+            if item.text(0) == 'name': 
+                parent_to_set_initial = self.get_parent(item, 3) # item.parent().parent().parent()
+                if parent_to_set_initial:
+                    name_to_set_initial = item.text(1)
+
+            elif is_digit and len(item.text(1)) > 0 and parent_is_children_none: 
+                parent_to_set_initial = self.get_parent(item, 2) # item.parent().parent()
+                if parent_to_set_initial:
+                    name_to_set_initial = item.text(1)
+
+            elif is_digit and len(item.text(1)) == 0 and parent_is_children_none:
+                parent_to_set_initial = self.get_parent(item, 2) # item.parent().parent()
+                if parent_to_set_initial:
+                    for i in range(item.childCount()):
+                        child = item.child(i)
+                        if child.text(0) == 'name':
+                            name_to_set_initial = child.text(1)
+                            break
+
             if parent_to_set_initial:
-                name_to_set_initial = item.text(1)
-
-        elif is_digit and len(item.text(1)) > 0 and parent_is_children_none: 
-            parent_to_set_initial = self.get_parent(item, 2) # item.parent().parent()
-            if parent_to_set_initial:
-                name_to_set_initial = item.text(1)
-
-        elif is_digit and len(item.text(1)) == 0 and parent_is_children_none:
-            parent_to_set_initial = self.get_parent(item, 2) # item.parent().parent()
-            if parent_to_set_initial:
-                for i in range(item.childCount()):
-                    child = item.child(i)
-                    if child.text(0) == 'name':
-                        name_to_set_initial = child.text(1)
-                        break
-
-        if parent_to_set_initial:
-            set_initial_state_action = menu.addAction("Set as initial state")
-            set_initial_state_action.triggered.connect(lambda b, item=parent_to_set_initial, key='initial', value=name_to_set_initial: 
-                                                       self.set_key_value(item, key, value))
+                set_initial_state_action = menu.addAction("Set as initial state")
+                set_initial_state_action.triggered.connect(lambda b, item=parent_to_set_initial, key='initial', value=name_to_set_initial: 
+                                                        self.set_key_value(item, key, value))
 
 
-        if is_digit and parent_is_children_none:
-            if not has_on_enter:
-                action = menu.addAction("Add on_enter [...]")
-                action.triggered.connect(lambda b, item=item, gate_name='on_enter': self.add_gate(item, gate_name))
+            if is_digit and parent_is_children_none:
+                if not has_on_enter:
+                    action = menu.addAction("Add on_enter [...]")
+                    action.triggered.connect(lambda b, item=item, gate_name='on_enter': self.add_gate(item, gate_name))
 
-            if not has_on_exit:
-                action = menu.addAction("Add on_exit [...]")
-                action.triggered.connect(lambda b, item=item, gate_name='on_exit': self.add_gate(item, gate_name))
+                if not has_on_exit:
+                    action = menu.addAction("Add on_exit [...]")
+                    action.triggered.connect(lambda b, item=item, gate_name='on_exit': self.add_gate(item, gate_name))
 
-            if not has_children:
-                action = menu.addAction("Add children [...]")
-                action.triggered.connect(lambda b, item=item: self.add_children_list(item))
+                if not has_children:
+                    action = menu.addAction("Add children [...]")
+                    action.triggered.connect(lambda b, item=item: self.add_children_list(item))
 
-        if self.can_add_children(item):
-            action = menu.addAction("Add a child")
-            action.triggered.connect(lambda b, item=item: self.add_list_item(item))
+            if self.can_add_children(item):
+                action = menu.addAction("Add a child")
+                action.triggered.connect(lambda b, item=item: self.add_list_item(item))
 
-        action = menu.addAction("Delete")
-        if item.text(0) == 'name':
-            action.triggered.connect(lambda b, item=item: self.delete_item(item.parent()))
+            action = menu.addAction("Delete")
+            if item.text(0) == 'name':
+                action.triggered.connect(lambda b, item=item: self.delete_item(item.parent()))
+            else:
+                action.triggered.connect(lambda b, item=item: self.delete_item(item))
+
         else:
-            action.triggered.connect(lambda b, item=item: self.delete_item(item))
+            action = menu.addAction("Save as")
+            action.triggered.connect(lambda b: self.save_as_json())
 
         action = menu.exec_(self.tree.viewport().mapToGlobal(position))
 
@@ -298,6 +301,25 @@ class StateMachineJsonViewer(QWidget):
             new_item.setText(1, value)
             parent_item.setExpanded(True)
 
+            names = self.get_parent_chain_names(new_item, value)
+            self.state_added_signal.emit(names)
+
+    def get_parent_chain_names(self, parent_item, name):
+        names = [name]
+        current_item = parent_item
+        while current_item.parent():
+            parent = current_item.parent()
+
+            for i in range(parent.childCount()):
+                child = parent.child(i)
+                if child.text(0) == 'name':
+                    names.append(child.text(1))
+
+            current_item = parent
+        names.reverse()
+        return names
+        
+
     def delete_item(self, item, need_confirm=False):
         if need_confirm is True:
             reply = QMessageBox.question(self, 'Confirm Deletion', 'Are you sure you want to delete this item?',
@@ -317,9 +339,12 @@ class StateMachineJsonViewer(QWidget):
                     if self.is_digit_item(child):
                         child.setText(0, f"[{i}]")
         else:
-            root = self.tree.invisibleRootItem()
-            index = root.indexOfChild(item)
-            root.takeChild(index)
+            parent = self.tree.invisibleRootItem()
+            index = parent.indexOfChild(item)
+            parent.takeChild(index)
+
+        names = self.get_parent_chain_names(parent, item.text(1))
+        self.state_removed_signal.emit(names)
 
 
     def edit_item(self, item, column):
@@ -333,12 +358,16 @@ class StateMachineJsonViewer(QWidget):
     def save_as_json(self):
         root_item = self.tree.invisibleRootItem()
         json_data = self.tree_to_json(root_item)
-        try:
-            with open('output.json', 'w', encoding='utf-8') as f:
-                json.dump(json_data, f, ensure_ascii=False, indent=4)
-            QMessageBox.information(self, 'Success', 'JSON file saved successfully.')
-        except Exception as e:
-            QMessageBox.critical(self, 'Error', f'Failed to save JSON file: {str(e)}')
+
+        # 弹出文件保存对话框
+        file_path, _ = QFileDialog.getSaveFileName(self, "Save JSON File", "", "JSON Files (*.json)")
+        if file_path:
+            try:
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    json.dump(json_data, f, ensure_ascii=False, indent=4)
+                QMessageBox.information(self, 'Success', 'JSON file saved successfully.')
+            except Exception as e:
+                QMessageBox.critical(self, 'Error', f'Failed to save JSON file: {str(e)}')
 
     def tree_to_json(self, parent_item):
         if all(child.text(0).startswith('[') for child in [parent_item.child(i) for i in range(parent_item.childCount())]):

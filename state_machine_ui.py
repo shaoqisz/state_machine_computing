@@ -256,6 +256,61 @@ class StateMachineWidget(QWidget):
 
         return None
 
+    def state_added_slot(self, names):
+        if names is None or len(names) < 2:
+            return
+
+        parent_chain = names[:-1]
+        state_name = names[-1]
+
+        parent_state = self.find_state_by_parent_chain(key=parent_chain)
+
+        state = State(state_name, parent=parent_state)
+        self.states.append(state)
+        parent_state.children.append(state)
+
+        self._layout_children(parent_state, parent_state.rect[0] + 20,  parent_state.rect[1] + 20)
+        
+        self._adjust_all_states()
+
+    def state_removed_slot(self, names):
+        if names is None or len(names) < 2:
+            return
+
+        parent_chain = names[:-1]
+        state_name = names[-1]
+
+        parent_state = self.find_state_by_parent_chain(key=parent_chain)
+        print(f'removed parent_chain={parent_chain} state_name={state_name} parent_state={parent_state.name}')
+
+        for child in parent_state.children:
+            if child.name == state_name:
+                print(f'remove {child.name}')
+                for state in self.states:
+                    if child == state:
+                        self.states.remove(state)
+                        break
+
+                parent_state.children.remove(child)
+                break
+
+        self._adjust_all_states()
+
+
+    def find_state_by_parent_chain(self, key):
+        def recursive_search(states, current_chain):
+            if not current_chain:
+                return None
+            current_name = current_chain[0]
+            for state in states:
+                if state.name == current_name:
+                    if len(current_chain) == 1:
+                        return state
+                    else:
+                        return recursive_search(state.children, current_chain[1:])
+            return None
+
+        return recursive_search(self.states, key)
 
     def _build_states(self, state_list, parent=None):
         for i, state_data in enumerate(state_list):
@@ -1419,6 +1474,9 @@ class MainWindow(QMainWindow):
 
         self.add_separator_btn.clicked.connect(lambda:self.text_edit.add_separator())
         self.clear_btn.clicked.connect(lambda: self.text_edit.clear())
+
+        self.json_viewer.state_added_signal.connect(self.state_machine.state_added_slot)
+        self.json_viewer.state_removed_signal.connect(self.state_machine.state_removed_slot)
 
         timer = QTimer()
         timer.singleShot(100, self.state_machine._adjust_all_states)
