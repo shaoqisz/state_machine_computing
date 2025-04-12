@@ -305,26 +305,26 @@ class StateMachineWidget(QWidget):
             elif isinstance(state_data, str):
                 name:str = state_data
                 state = State(name, parent=parent)
-                full_path = self.get_full_path(state)
-
-                state_dict = {"name": state_data}
-                state_list[i] = state_dict
-
                 self.states.append(state)
 
-                if self.enable_default_enter is True:
-                    default_enter_state_func_name = f'{full_path}::default_enter'
-                    state_dict['on_enter'] = [default_enter_state_func_name]
-                    state.enter_list = [default_enter_state_func_name]
-                    # print(f'default_enter_state_func_name={default_enter_state_func_name}')
-                    self.setup_enter_state_function(default_enter_state_func_name)
+                if self.enable_default_enter is True or self.enable_default_exit is True:
+                    state_dict = {"name": state_data}
+                    state_list[i] = state_dict
 
-                if self.enable_default_exit is True:
-                    default_exit_state_func_name = f'{full_path}::default_exit'
-                    state_dict['on_exit'] = [default_exit_state_func_name]
-                    state.exit_list =  [default_exit_state_func_name]
-                    # print(f'default_exit_state_func_name={default_exit_state_func_name}')
-                    self.setup_exit_state_function(default_exit_state_func_name)
+                    full_path = self.get_full_path(state)
+                    if self.enable_default_enter is True:
+                        default_enter_state_func_name = f'{full_path}::default_enter'
+                        state_dict['on_enter'] = [default_enter_state_func_name]
+                        state.enter_list = [default_enter_state_func_name]
+                        # print(f'default_enter_state_func_name={default_enter_state_func_name}')
+                        self.setup_enter_state_function(default_enter_state_func_name)
+
+                    if self.enable_default_exit is True:
+                        default_exit_state_func_name = f'{full_path}::default_exit'
+                        state_dict['on_exit'] = [default_exit_state_func_name]
+                        state.exit_list =  [default_exit_state_func_name]
+                        # print(f'default_exit_state_func_name={default_exit_state_func_name}')
+                        self.setup_exit_state_function(default_exit_state_func_name)
 
     def _layout_states(self):
         default_w = 200
