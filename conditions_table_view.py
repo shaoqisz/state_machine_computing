@@ -445,7 +445,7 @@ class MySearchComboBox(QComboBox):
         super().__init__(parent=parent)
 
         self.history = []
-        self.history_file = "search_history.txt"
+        self.history_file = "search_history_table_view.txt"
 
         self.setEditable(True)
         self.load_history()

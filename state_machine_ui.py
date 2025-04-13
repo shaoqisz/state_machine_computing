@@ -256,6 +256,45 @@ class StateMachineWidget(QWidget):
 
         return None
 
+    def state_rename_slot(self, names, old_state_name: str):
+        if names is None or len(names) == 0:
+            return
+
+        parent_chain = None
+        if len(names) >= 2:
+            parent_chain = names[:-1]
+            new_state_name = names[-1]
+        else:
+            new_state_name = names[-1]
+
+        target_state = None
+        if parent_chain is None:
+            root_states = [state for state in self.states if state.parent is None]
+            for root in root_states:
+                if root.name == old_state_name:
+                    target_state = root
+                    break
+        else:
+            parent_state = self.find_state_by_parent_chain(key=parent_chain)
+            if parent_state:
+                for child in parent_state.children:
+                    if child.name == old_state_name:
+                        target_state = child
+                        break
+
+        if target_state:
+            print(f'Rename state from {target_state.name} to {new_state_name}')
+            target_state.name = new_state_name
+
+        for state in self.states:
+            state.outgoing_transitions.clear()
+        self.merged_transitions.clear()
+
+        if self.json_transitions is not None:
+            self._connect_states(self.json_transitions)
+        self._adjust_all_states()
+
+
     def state_added_slot(self, names):
         if names is None or len(names) < 2:
             return
@@ -270,32 +309,67 @@ class StateMachineWidget(QWidget):
         parent_state.children.append(state)
 
         self._layout_children(parent_state, parent_state.rect[0] + 20,  parent_state.rect[1] + 20)
-        
+
+
+        for state in self.states:
+            state.outgoing_transitions.clear()
+        self.merged_transitions.clear()
+
+        if self.json_transitions is not None:
+            self._connect_states(self.json_transitions)
         self._adjust_all_states()
 
     def state_removed_slot(self, names):
-        if names is None or len(names) < 2:
+        if names is None or len(names) == 0:
             return
 
-        parent_chain = names[:-1]
-        state_name = names[-1]
+        parent_chain = None
+        if len(names) >= 2:
+            parent_chain = names[:-1]
+            state_name = names[-1]
+        else:
+            state_name = names[-1]
 
-        parent_state = self.find_state_by_parent_chain(key=parent_chain)
-        print(f'removed parent_chain={parent_chain} state_name={state_name} parent_state={parent_state.name}')
+        if parent_chain is None:
+            root_states = [state for state in self.states if state.parent is None]
+            for root in root_states[:]:  # 复制一份列表，避免在遍历过程中修改列表导致问题
+                if root.name == state_name:
+                    print(f'remove {root.name}')
+                    # 递归删除子状态
+                    self._recursive_remove_states(root)
+                    if root in self.states:
+                        self.states.remove(root)
+        else:
+            parent_state = self.find_state_by_parent_chain(key=parent_chain)
+            print(f'#### removed parent_chain={parent_chain} state_name={state_name}, parent_state={parent_state.name}')
 
-        for child in parent_state.children:
-            if child.name == state_name:
-                print(f'remove {child.name}')
-                for state in self.states:
-                    if child == state:
-                        self.states.remove(state)
-                        break
+            for child in parent_state.children[:]:  # 复制一份列表，避免在遍历过程中修改列表导致问题
+                if child.name == state_name:
+                    print(f'remove {child.name}')
+                    # 递归删除子状态
+                    self._recursive_remove_states(child)
+                    if child in self.states:
+                        self.states.remove(child)
+                    parent_state.children.remove(child)
+                    break
 
-                parent_state.children.remove(child)
-                break
+        for state in self.states:
+            state.outgoing_transitions.clear()
+        self.merged_transitions.clear()
+
+        if self.json_transitions is not None:
+            self._connect_states(self.json_transitions)
 
         self._adjust_all_states()
 
+    def _recursive_remove_states(self, state):
+        # 先递归删除子状态
+        for child in state.children[:]:
+            self._recursive_remove_states(child)
+            if child in self.states:
+                self.states.remove(child)
+        # 清空当前状态的子状态列表
+        state.children = []
 
     def find_state_by_parent_chain(self, key):
         def recursive_search(states, current_chain):
@@ -1477,6 +1551,7 @@ class MainWindow(QMainWindow):
 
         self.json_viewer.state_added_signal.connect(self.state_machine.state_added_slot)
         self.json_viewer.state_removed_signal.connect(self.state_machine.state_removed_slot)
+        self.json_viewer.state_rename_signal.connect(self.state_machine.state_rename_slot)
 
         timer = QTimer()
         timer.singleShot(100, self.state_machine._adjust_all_states)
