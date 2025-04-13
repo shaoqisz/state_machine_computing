@@ -122,15 +122,15 @@ class StateMachineJsonViewer(QWidget):
             QTreeView {
                 font-size: 16px;
                 border-radius: 8px;
-                padding: 5px;
+                padding: 0px;
                 border: 1px solid gray;
             }
             QHeaderView::section {
                 border: 1px solid #d9dcdb;
             }
             QTreeView::item {
-                padding: 5px;
-                height: 12px;
+                padding: 0px;
+                height: 25px;
             }
         """)
     def set_black_theme(self):
@@ -140,18 +140,16 @@ class StateMachineJsonViewer(QWidget):
                 gridline-color: gray;
                 font-size: 16px;
                 border-radius: 8px;
-                padding: 5px;
-                height: 12px;
+                padding: 0px;
             }
             QHeaderView::section {
                 background-color: black;
                 border: 1px solid gray;
-                padding: 5px;
             }
             QTreeView::item {
                 background-color: black;
-                padding: 5px;
-                height: 12px;
+                padding: 0px;
+                height: 25px;
             }
             QTreeView::item:selected {
                 background-color: gray;
@@ -735,5 +733,6 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     viewer = StateMachineJsonViewer(json_data)
     viewer.setGeometry(300, 300, 600, 800)
+    viewer.set_white_theme()
     viewer.show()
     sys.exit(app.exec_())
