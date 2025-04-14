@@ -111,6 +111,12 @@ class StateMachineJsonViewer(QWidget):
     def set_json_data(self, json_data):
         self.tree_model.clear()
         self.tree_model.setHorizontalHeaderLabels(['Key', 'Value'])
+
+        for col in range(self.tree_model.columnCount()):
+            header_item = self.tree_model.horizontalHeaderItem(col)
+            if header_item is not None:
+                header_item.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+
         self.populate_model(self.tree_model.invisibleRootItem(), json_data)
 
         self.tree.header().setSectionResizeMode(0, QHeaderView.ResizeToContents)
@@ -122,11 +128,21 @@ class StateMachineJsonViewer(QWidget):
             QTreeView {
                 font-size: 16px;
                 border-radius: 8px;
-                padding: 0px;
+                padding: 2px;
                 border: 1px solid gray;
             }
             QHeaderView::section {
-                border: 1px solid #d9dcdb;
+                background-color: white;
+                border: none;
+                padding: 5px;
+                border-right: 1px solid #d9dcdb;
+            }
+            QHeaderView::section:first {
+                border-top-left-radius: 10px;
+            }
+            QHeaderView::section:last {
+                border-top-right-radius: 10px;
+                border-right: none;
             }
             QTreeView::item {
                 padding: 0px;
@@ -140,12 +156,21 @@ class StateMachineJsonViewer(QWidget):
                 gridline-color: gray;
                 font-size: 16px;
                 border-radius: 8px;
-                padding: 0px;
+                padding: 2px;
                 border: 1px solid gray;
             }
             QHeaderView::section {
                 background-color: black;
-                border: 1px solid gray;
+                border: none;
+                padding: 5px;
+                border-right: 1px solid gray;
+            }
+            QHeaderView::section:first {
+                border-top-left-radius: 10px;
+            }
+            QHeaderView::section:last {
+                border-top-right-radius: 10px;
+                border-right: none;
             }
             QTreeView::item {
                 background-color: black;
