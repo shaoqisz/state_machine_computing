@@ -32,6 +32,19 @@ class RecursiveFilterProxyModel(QSortFilterProxyModel):
 
         return super().filterAcceptsRow(source_row, source_parent)
 
+class TreeViewMonitorDataChange(QTreeView):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.editing_item_old_text = None
+        self.record_old_text_callback = None
+
+    def set_record_old_text_callback(self, callback):
+        self.record_old_text_callback = callback
+
+    def edit(self, index, trigger, event):
+        if self.record_old_text_callback:
+            self.record_old_text_callback(index)
+        return super().edit(index, trigger, event)
 
 class MySearchComboBox(QComboBox):
     def __init__(self, parent=None):
@@ -243,7 +256,7 @@ class StateMachineJsonViewer(QWidget):
         self.proxy_model.setFilterCaseSensitivity(Qt.CaseInsensitive)  # 不区分大小写
         self.tree_model.itemChanged.connect(self.on_item_changed)
 
-        self.tree = QTreeView()
+        self.tree = TreeViewMonitorDataChange()
         self.tree.setModel(self.proxy_model)
         self.tree.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
 
@@ -251,8 +264,8 @@ class StateMachineJsonViewer(QWidget):
 
         self.tree.setContextMenuPolicy(3)
         self.tree.customContextMenuRequested.connect(self.show_context_menu)
-        self.tree.doubleClicked.connect(self.edit_item)
-
+        # self.tree.doubleClicked.connect(self.edit_item)
+        self.tree.set_record_old_text_callback(self.record_old_text)
 
         self.search_widget = QWidget()
         self.search_widget.setLayout(QGridLayout())
@@ -272,21 +285,38 @@ class StateMachineJsonViewer(QWidget):
     def populate_model(self, parent, data):
         if isinstance(data, dict):
             for key, value in data.items():
+                
                 key_item = QStandardItem(key)
+                key_item.setFlags(key_item.flags() & ~Qt.ItemIsEditable)
+
                 if isinstance(value, (dict, list)):
                     self.populate_model(key_item, value)
-                    parent.appendRow([key_item, QStandardItem()])
+                    
+                    value_item = QStandardItem()
+                    value_item.setFlags(value_item.flags() & ~Qt.ItemIsEditable)
+
+                    parent.appendRow([key_item, value_item])
                 else:
                     value_item = QStandardItem(str(value))
+                    if key_item.text() in ['children', 'on_enter', 'on_exit']:
+                        value_item.setFlags(value_item.flags() & ~Qt.ItemIsEditable)                
                     parent.appendRow([key_item, value_item])
         elif isinstance(data, list):
             for index, value in enumerate(data):
+                
                 key_item = QStandardItem(f"[{index}]")
+                key_item.setFlags(key_item.flags() & ~Qt.ItemIsEditable)
+                
                 if isinstance(value, (dict, list)):
                     self.populate_model(key_item, value)
-                    parent.appendRow([key_item, QStandardItem()])
+
+                    value_item = QStandardItem()
+                    value_item.setFlags(value_item.flags() & ~Qt.ItemIsEditable)                
+                    parent.appendRow([key_item, value_item])
                 else:
                     value_item = QStandardItem(str(value))
+                    if key_item.text() in ['children', 'on_enter', 'on_exit']:
+                        value_item.setFlags(value_item.flags() & ~Qt.ItemIsEditable)
                     parent.appendRow([key_item, value_item])
 
     def get_parent(self, item, times):
@@ -456,7 +486,10 @@ class StateMachineJsonViewer(QWidget):
         value, ok = QInputDialog.getText(self, "Add a child", "Enter child name:")
         if ok:
             row = parent_item.rowCount()
+            
             key_item = QStandardItem(f"[{row}]")
+            key_item.setFlags(key_item.flags() & ~Qt.ItemIsEditable)
+
             value_item = QStandardItem(value)
             parent_item.appendRow([key_item, value_item])
             self.tree.expand(index)
@@ -473,7 +506,12 @@ class StateMachineJsonViewer(QWidget):
         if is_string_node is True:
             self.add_key_value(item_column_1, 'name', item_column_2.text())
             self.add_children(item_column_1)
+            
+            self.tree_model.blockSignals(True)
             item_column_2.setText('')
+            item_column_2.setFlags(item_column_2.flags() & ~Qt.ItemIsEditable)
+            self.tree_model.blockSignals(False)
+
         else:
             self.add_children(item_column_1)
 
@@ -481,7 +519,11 @@ class StateMachineJsonViewer(QWidget):
 
     def add_children(self, parent_item):
         key_item = QStandardItem("children")
+        key_item.setFlags(key_item.flags() & ~Qt.ItemIsEditable)
+        
         value_item = QStandardItem("")
+        value_item.setFlags(value_item.flags() & ~Qt.ItemIsEditable)
+
         parent_item.appendRow([key_item, value_item])
         index = self.tree_model.indexFromItem(parent_item)
         self.tree.expand(index)
@@ -489,9 +531,16 @@ class StateMachineJsonViewer(QWidget):
     def add_gate(self, gate_name, item_column_1, item_column_2, index):
         is_string_node = self.is_string_node(item_column_2)
         if is_string_node:
-            self.add_key_value(item_column_1, 'name', item_column_1.parent().child(item_column_1.row(), 1).text())
+            
+            parent_item = item_column_1.parent().child(item_column_1.row(), 1)
+            self.add_key_value(item_column_1, 'name', parent_item.text())
             self.add_key_value(item_column_1, gate_name, '')
-            item_column_1.parent().child(item_column_1.row(), 1).setText('')
+
+            self.tree_model.blockSignals(True)
+            parent_item.setText('')
+            parent_item.setFlags(parent_item.flags() & ~Qt.ItemIsEditable)
+            self.tree_model.blockSignals(False)
+
         else:
             self.add_key_value(item_column_1, gate_name, '')
 
@@ -534,7 +583,12 @@ class StateMachineJsonViewer(QWidget):
 
     def add_key_value(self, parent_item, key, value):
         key_item = QStandardItem(key)
+        key_item.setFlags(key_item.flags() & ~Qt.ItemIsEditable)
+
         value_item = QStandardItem(value)
+        if len(value) == 0:
+            value_item.setFlags(value_item.flags() & ~Qt.ItemIsEditable)
+
         parent_item.appendRow([key_item, value_item])
         index = self.tree_model.indexFromItem(parent_item)
         self.tree.expand(index)
@@ -550,7 +604,12 @@ class StateMachineJsonViewer(QWidget):
                     found = True
             if not found:
                 key_item = QStandardItem(key)
+                key_item.setFlags(key_item.flags() & ~Qt.ItemIsEditable)
+
                 value_item = QStandardItem(value)
+                if len(value) == 0:
+                    value_item.setFlags(value_item.flags() & ~Qt.ItemIsEditable)
+                
                 parent_item.appendRow([key_item, value_item])
 
             self.tree.expand(index)
@@ -617,13 +676,20 @@ class StateMachineJsonViewer(QWidget):
         print(f'state_removed_signal names={names}')
         self.state_removed_signal.emit(names)
 
-    def edit_item(self, index):
+    def record_old_text(self, index):
+        # print(f'edit_item index={index.column()}')
+        if index.column() == 0:
+            return
+
         if index.column() == 1:
             _item = self.tree_model.itemFromIndex(self.proxy_model.mapToSource(index))
             item_column_1, item_column_2 = self.get_items_1_2(_item, index)
-            # print(f"Item in row {index.row()}, column {index.column()} old-name={item_column_2.text()}")
-            self.editing_item_old_text = item_column_2.text()
-            self.tree.edit(index)
+            if item_column_1 and item_column_2:
+                # print(f'item_column_1.text()={item_column_1.text()}')
+                # if item_column_1.text() != 'children' and item_column_1.text() != 'on_enter' and item_column_1.text() != 'on_exit':
+                print(f"record_old_text() old-name={item_column_2.text()}")
+                self.editing_item_old_text = item_column_2.text()
+                # self.tree.edit(index)
 
     def on_item_changed(self, renamed_item):
         index = self.tree_model.indexFromItem(renamed_item)
@@ -669,8 +735,8 @@ class StateMachineJsonViewer(QWidget):
                 names = self.get_parent_chain_names(parent, name)
             else:
                 names = [name]
-            
-            print(f"State row={index.row()}, column {index.column()} was renamed from {self.editing_item_old_text} to {names}")
+
+            print(f"on_item_changed() old-name={self.editing_item_old_text} new={names}")
             self.state_rename_signal.emit(names, self.editing_item_old_text)
 
     def save_as_json(self):
