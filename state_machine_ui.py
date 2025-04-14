@@ -511,8 +511,10 @@ class StateMachineWidget(QWidget):
             pen_color = Qt.GlobalColor.black
         elif state == self.weak_state:
             painter.setBrush(Qt.GlobalColor.gray)
+        elif state.level == 0:
+            painter.setBrush(self.root_state_color)
         else:
-            painter.setBrush(self.state_color)
+            painter.setBrush(Qt.GlobalColor.transparent)
 
         painter.setPen(QPen(pen_color, pen_width))
 
@@ -565,13 +567,13 @@ class StateMachineWidget(QWidget):
         self.update()
 
     def set_black_theme(self):
-        self.state_color = QColor('#353333') #Qt.GlobalColor.black # QColor('#2b2b2b')
+        self.root_state_color = QColor('#1d1d1d') # Qt.GlobalColor.black # QColor('#2b2b2b')
         self.opposite_color = Qt.GlobalColor.white
         self.level_colors = LEVEL_COLORS_BLACK_THEME
 
     
     def set_white_theme(self):
-        self.state_color = Qt.GlobalColor.white
+        self.root_state_color = QColor('#f4f4f4') # Qt.GlobalColor.white
         self.opposite_color = Qt.GlobalColor.black
         self.level_colors = LEVEL_COLORS_WHITE_THEME
 
