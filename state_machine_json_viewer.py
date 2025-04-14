@@ -141,6 +141,7 @@ class StateMachineJsonViewer(QWidget):
                 font-size: 16px;
                 border-radius: 8px;
                 padding: 0px;
+                border: 1px solid gray;
             }
             QHeaderView::section {
                 background-color: black;
@@ -325,6 +326,10 @@ class StateMachineJsonViewer(QWidget):
             item_column_1, item_column_2 = self.get_items_1_2(_item, index)
             # print(f'item_column_1={item_column_1.text()} item_column_2={item_column_2.text()}')
 
+            if item_column_1.parent() is None:
+                action = menu.addAction("Save as")
+                action.triggered.connect(lambda b: self.save_as_json())
+
             is_digit = self.is_digit_item(item_column_1)
             has_children = self.has_property(item_column_1, 'children')
             has_on_enter = self.has_property(item_column_1, 'on_enter')
@@ -395,7 +400,7 @@ class StateMachineJsonViewer(QWidget):
                 for child_no in range(item_column_1.rowCount()):
                     child_item = item_column_1.child(child_no, 0)
                     child_item_data = item_column_1.child(child_no, 1)
-                    print(f'del child_item={child_item.text()} data={child_item_data.text()}')
+                    # print(f'del child_item={child_item.text()} data={child_item_data.text()}')
                     item_names.append( (child_item, child_item_data.text()) )
             elif is_digit and item_column_2 is None or len(item_column_2.text()) == 0:
                 # print(f'case3 is digit and item_column_2={item_column_2}')
@@ -557,7 +562,7 @@ class StateMachineJsonViewer(QWidget):
         parent = item.parent()
         names = None
         if parent:
-            print('case5')
+            # print('case5')
             names = self.get_parent_chain_names(parent, name)
             grandparent = parent.parent()
             if grandparent:
@@ -575,7 +580,7 @@ class StateMachineJsonViewer(QWidget):
                     if self.is_digit_item(child):
                         child.setText(f"[{i}]")
         else:
-            print('case6')
+            # print('case6')
             names = [name]
             root = self.tree_model.invisibleRootItem()
             row = item.row()
@@ -647,7 +652,6 @@ class StateMachineJsonViewer(QWidget):
         root_item = self.tree_model.invisibleRootItem()
         json_data = self.model_to_json(root_item)
 
-        # 弹出文件保存对话框
         file_path, _ = QFileDialog.getSaveFileName(self, "Save JSON File", "", "JSON Files (*.json)")
         if file_path:
             try:
@@ -658,29 +662,33 @@ class StateMachineJsonViewer(QWidget):
                 QMessageBox.critical(self, 'Error', f'Failed to save JSON file: {str(e)}')
 
     def model_to_json(self, parent_item):
+        if parent_item.rowCount() == 0:
+            return None
+
         if all(self.is_digit_item(parent_item.child(i)) for i in range(parent_item.rowCount())):
             result = []
             for i in range(parent_item.rowCount()):
                 child = parent_item.child(i)
-                if child.rowCount() > 0:
+                child_value_item = child.parent().child(child.row(), 1) if child.parent() else None
+                child_value = child_value_item.text().strip() if child_value_item and child_value_item.text().strip() else None
+                if child_value is None and child.rowCount() > 0:
                     child_value = self.model_to_json(child)
-                    if child_value:
-                        result.append(child_value)
-                elif child.child(0, 1).text().strip():
-                    result.append(child.child(0, 1).text())
-            return result
+                if child_value is not None:
+                    result.append(child_value)
+            return result if result else None
         else:
             result = {}
             for i in range(parent_item.rowCount()):
                 child = parent_item.child(i)
                 key = child.text()
-                if child.rowCount() > 0:
+                value_item = child.parent().child(child.row(), 1) if child.parent() else None
+                value = value_item.text().strip() if value_item and value_item.text().strip() else None
+                if value is None and child.rowCount() > 0:
                     value = self.model_to_json(child)
-                    if value:
-                        result[key] = value
-                elif child.child(0, 1).text().strip():
-                    result[key] = child.child(0, 1).text()
-            return result
+                if value is not None:
+                    result[key] = value
+            return result if result else None
+
 
     # def filter_tree_view_slot(self, text):
     #     self.proxy_model.setFilterRegularExpression(text)

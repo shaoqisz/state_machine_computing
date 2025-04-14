@@ -1507,6 +1507,8 @@ class MainWindow(QMainWindow):
         self.upper_hor_spliter.addWidget(self.sm_border_widget)
         self.upper_hor_spliter.addWidget(self.json_viewer)
 
+        # self.upper_hor_spliter.setStyleSheet('border-radius: 10px; border: 2px solid gray;')
+
 
         self.hor_spliter = QSplitter(Qt.Horizontal, self)
         self.hor_spliter.setObjectName("hor_spliter")
