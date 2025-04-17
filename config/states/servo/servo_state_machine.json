@@ -1,0 +1,19 @@
+[
+    {
+        "name": "ServoStateMachine",
+        "children": [
+            {
+                "name": "Normal",
+                "children": [
+                    "SwitchOnDisabled",
+                    "ReadyToSwitchOn",
+                    "SwitchOn",
+                    "OperationEnabled",
+                    "QuickStop"
+                ],
+                "initial": "SwitchOnDisabled"
+            },
+            "Fault"
+        ]
+    }
+]
