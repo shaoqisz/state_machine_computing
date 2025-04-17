@@ -38,6 +38,9 @@ class ColorfulTextEdit(QPlainTextEdit):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setReadOnly(True)
+        font = QFont("Consolas")  # 或 "Courier New", "Menlo"
+        font.setFixedPitch(True)  # 强制等宽
+        self.setFont(font)
 
     def contextMenuEvent(self, event):
         self.parent().contextMenuEvent(event)
@@ -53,7 +56,9 @@ class ColorfulTextEdit(QPlainTextEdit):
     def add_separator(self):
         self.appendHtml('<span style="color: #2ca20f; font-weight: bold;"> --------------------------- user added separator --------------------------- </span>')
 
-    def append_log(self, object_name, function_name, function_params=None, return_code=None, left_variable=None, function_type:FunctionType = FunctionType.other, extra_flag=None):
+    def append_log(self, object_name, function_name, function_params=None, return_code=None, 
+                   left_variable=None, function_type:FunctionType = FunctionType.other, 
+                   actions=None):
         now = datetime.datetime.now()
         timestamp = now.strftime(TIMESTAMP_FORMAT)
 
@@ -82,12 +87,19 @@ class ColorfulTextEdit(QPlainTextEdit):
 
         color_left_variable = ''
         if left_variable is not None:
-            color_left_variable = f'{left_variable} ='
+            color_left_variable = f'{left_variable} = '
 
-        color_extra_flag = ''
-        if extra_flag is not None:
-            color_extra_flag = f'<span style="color: #2ca20f;">[{extra_flag}]</span>'
 
-        text = f"{color_ts} {color_left_variable} {color_object_name}{color_func_name}{color_function_params} {color_return_code} {color_extra_flag}"
+        text = ''
+        color_actions_flags = ''
+        if actions is not None and len(actions) > 0:
+            space = (len(timestamp) + 7) * ' '
+            for action in actions:
+                color_actions_flags += f'{space}<span style="color: magenta;">{action}</span>\n'
+            text = f"{color_ts} {color_left_variable}{color_object_name}{color_func_name}{color_function_params}\n{color_actions_flags}{space}{color_return_code}"
+        else:
+            text = f"{color_ts} {color_left_variable}{color_object_name}{color_func_name}{color_function_params} {color_return_code}"
 
-        self.appendHtml(text)
+        head_text = (f'<p style="white-space: pre-wrap;">{text}</p>')
+
+        self.appendHtml(head_text)

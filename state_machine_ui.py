@@ -69,7 +69,7 @@ class State:
 class StateMachineWidget(QWidget):
 
     called_trigger_signal = pyqtSignal(str)
-    called_condition_signal = pyqtSignal(str, str, str, bool)
+    called_condition_signal = pyqtSignal(str, str, str, bool, list)
     called_enter_state_signal = pyqtSignal(str, str, str)
     called_exit_state_signal = pyqtSignal(str, str, str)
 
@@ -1311,8 +1311,10 @@ class StateMachineWidget(QWidget):
             # print(f"source_name={event.state.name}")
             source = event.transition.source 
             dest = event.transition.dest
-            return_code = custom_conditions()
-            signal.emit(source, dest, old_name, return_code)
+
+            actions = []
+            return_code = custom_conditions(actions)
+            signal.emit(source, dest, old_name, return_code, actions)
             return return_code
         new_conditions_function.__name__ = old_name
         return new_conditions_function
@@ -1586,11 +1588,12 @@ class MainWindow(QMainWindow):
                                   function_name=trigger, 
                                   function_type=FunctionType.trigger)
 
-    def condition_message_slot(self, source_name, dest_name, function_name, return_code):
+    def condition_message_slot(self, source_name, dest_name, function_name, return_code, actions):
         self.text_edit.append_log(object_name=self.config_page.config_name_combobox.currentText(),
                                   function_name=function_name, 
                                   function_params=[source_name.split("_")[-1], dest_name.split("_")[-1]], 
                                   return_code=return_code,
+                                  actions=actions,
                                   function_type=FunctionType.condition)
 
         if return_code is True:
