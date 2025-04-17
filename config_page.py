@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QCheckBox, QVBoxLayout, QHBox
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import pyqtSignal, Qt
 
+from pathlib import Path
 
 
 class Theme(Enum):
@@ -142,23 +143,41 @@ class ConfigPage(QWidget):
 
         # self.resize(700, 150)
 
-    def get_matter_lib(self):
+    def get_matter_lib(self, reload_module=True):
         lib = None
         if self.enable_custom_matter.isChecked() and len(self.custom_matter_input.text()) > 0:
-            # lib = importlib.import_module(self.custom_matter_input.text())
-            module_path = self.custom_matter_input.text().replace('/', '.').replace('\\', '.')
-            if module_path.endswith('.py'):
-                module_path = module_path[:-3]
+            print(f'get_matter_lib {self.custom_matter_input.text()}')
+            # 提取模块名
+            module_path_name = os.path.basename(self.custom_matter_input.text())
+            module_path = Path(module_path_name)
+            module_name = module_path.stem
 
-            # 获取模块所在的目录
-            module_dir = '/'.join(self.custom_matter_input.text().split('/')[:-1])
+            print(f'module_name={module_name}')
+            module_dir = os.path.dirname(self.custom_matter_input.text())
             if module_dir:
+                print(f'module_dir={module_dir}')
                 # 将模块所在的目录添加到 sys.path 中
-                sys.path.append(module_dir)
+                if getattr(sys, 'frozen', False):
+                    print(f'frozen env={sys._MEIPASS}')
+                    base_path = os.getcwd()
+                    # print(f'base_path={base_path}, module_dir={module_dir}')
+                    module_full_path = os.path.join(base_path, module_dir)
+                    # base_path = sys._MEIPASS
+                    # module_full_path = os.path.join(base_path, module_dir)
+                else:
+                    print(f'non frozen env')
+                    # 如果是直接运行 Python 脚本
+                    module_full_path = os.path.abspath(module_dir)
+                sys.path.append(module_full_path)
 
             try:
                 # 导入模块
-                lib = importlib.import_module(module_path)
+                if reload_module and module_name in sys.modules:
+                    # 如果需要重新加载且模块已经在 sys.modules 中
+                    lib = sys.modules[module_name]
+                    lib = importlib.reload(lib)
+                else:
+                    lib = importlib.import_module(module_name)
                 return lib
             except ImportError as e:
                 print(f"导入模块时出错: {e}")
