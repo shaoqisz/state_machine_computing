@@ -138,7 +138,7 @@ class StateMachineWidget(QWidget):
                     # print(f'del matter\'s attr={attr}')
                     delattr(Matter, attr)
 
-    def reload_config(self, config_name, STATES_CONFIG, TRANSITIONS_CONFIG_FOLDER, enable_default_enter, enable_default_exit):
+    def reload_config(self, config_name, STATES_CONFIG, TRANSITIONS_CONFIG_FOLDER, enable_default_enter, enable_default_exit, custom_matter=None):
         try:
             self.remove_all_new_matter_method()
 
@@ -153,6 +153,8 @@ class StateMachineWidget(QWidget):
             
             self.enable_default_enter = enable_default_enter
             self.enable_default_exit = enable_default_exit
+
+            self.custom_matter = custom_matter
 
             self.font.setPointSize(10)
 
@@ -187,6 +189,7 @@ class StateMachineWidget(QWidget):
         self.called_set_initial_state_signal.emit(state_name)
 
         self.model = Matter()
+
         extra_args = dict(auto_transitions=False, show_conditions=True, show_state_attributes=True)
         if state_name is not None:
             extra_args['initial'] = state_name
@@ -1303,6 +1306,17 @@ class StateMachineWidget(QWidget):
         new_conditions_function.__name__ = old_name
         return new_conditions_function
     
+    def create_custom_conditions_function(self, old_name, custom_conditions, signal):
+        def new_conditions_function(self, event: EventData):
+            # print(f"source_name={event.state.name}")
+            source = event.transition.source 
+            dest = event.transition.dest
+            return_code = custom_conditions()
+            signal.emit(source, dest, old_name, return_code)
+            return return_code
+        new_conditions_function.__name__ = old_name
+        return new_conditions_function
+    
     def create_enter_state_function(self, old_name, signal):
         def enter_state_function(self, event: EventData):
             source = event.transition.source 
@@ -1328,10 +1342,16 @@ class StateMachineWidget(QWidget):
         setattr(Matter, exit_state_function_name, new_func)
 
     def setup_conditions_allowed_slot(self, conditions, allowed):
-        new_func = self.create_conditions_function(conditions, bool(allowed.lower() == 'yes'), self.called_condition_signal)
-        if conditions is not None:
-            # print(f'set Matter.{conditions} always return ({allowed})')
-            setattr(Matter, conditions, new_func)
+        if conditions is None:
+            return
+        
+        if self.custom_matter is not None:
+            custom_conditions = getattr(self.custom_matter, conditions)
+            new_func = self.create_custom_conditions_function(conditions, custom_conditions, self.called_condition_signal)
+        else:
+            new_func = self.create_conditions_function(conditions, bool(allowed.lower() == 'yes'), self.called_condition_signal)
+
+        setattr(Matter, conditions, new_func)
 
     def focus_slot(self, function_type, focus_name):
         if function_type == FunctionType.state:
@@ -1420,7 +1440,8 @@ class MainWindow(QMainWindow):
                                          self.config_page.main_resource_input.text(), 
                                          self.config_page.secondary_resource_input.text(),
                                          self.config_page.enable_default_enter_checkbox.isChecked(),
-                                         self.config_page.enable_default_exit_checkbox.isChecked())
+                                         self.config_page.enable_default_exit_checkbox.isChecked(),
+                                         self.config_page.get_matter_lib())
         
         self.state_machine.set_animation(bool(self.config_page.animation_options.currentIndex()))
 
@@ -1628,7 +1649,8 @@ class MainWindow(QMainWindow):
                                          self.config_page.main_resource_input.text(), 
                                          self.config_page.secondary_resource_input.text(),
                                          self.config_page.enable_default_enter_checkbox.isChecked(),
-                                         self.config_page.enable_default_exit_checkbox.isChecked())
+                                         self.config_page.enable_default_exit_checkbox.isChecked(),
+                                         self.config_page.get_matter_lib())
 
         if self.state_machine.json_transitions is not None:
             self.table_view_w_search.set_transitions(self.config_page.config_name_combobox.currentText(), self.state_machine.json_transitions)

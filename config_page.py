@@ -2,6 +2,8 @@ import sys
 import json
 import os
 from enum import Enum 
+import importlib
+
 
 from PyQt5.QtWidgets import QApplication, QWidget, QCheckBox, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QMessageBox, QInputDialog, QPushButton, QLineEdit, QFileDialog, QMainWindow, QMenuBar, QMenu, QFormLayout, QGridLayout
 from PyQt5.QtGui import QIcon
@@ -85,6 +87,22 @@ class ConfigPage(QWidget):
         layout.addWidget(self.secondary_resource_button, row, column)
         column += 1
 
+        self.enable_custom_matter = QCheckBox('Custom Matter')
+        self.enable_custom_matter.setChecked(False)
+        self.custom_matter_input = QLineEdit()
+        self.custom_matter_button = QPushButton("Select")
+        self.custom_matter_input.setEnabled(False)
+        self.custom_matter_button.setEnabled(False)
+
+        row += 1
+        column = 0
+        layout.addWidget(self.enable_custom_matter, row, column)
+        column += 1
+        layout.addWidget(self.custom_matter_input, row, column)
+        column += 1
+        layout.addWidget(self.custom_matter_button, row, column)
+        column += 1
+
         row += 1
         column = 0
         self.animation_options = QComboBox()
@@ -124,6 +142,37 @@ class ConfigPage(QWidget):
 
         # self.resize(700, 150)
 
+    def get_matter_lib(self):
+        lib = None
+        if self.enable_custom_matter.isChecked() and len(self.custom_matter_input.text()) > 0:
+            # lib = importlib.import_module(self.custom_matter_input.text())
+            module_path = self.custom_matter_input.text().replace('/', '.').replace('\\', '.')
+            if module_path.endswith('.py'):
+                module_path = module_path[:-3]
+
+            # 获取模块所在的目录
+            module_dir = '/'.join(self.custom_matter_input.text().split('/')[:-1])
+            if module_dir:
+                # 将模块所在的目录添加到 sys.path 中
+                sys.path.append(module_dir)
+
+            try:
+                # 导入模块
+                lib = importlib.import_module(module_path)
+                return lib
+            except ImportError as e:
+                print(f"导入模块时出错: {e}")
+                return None
+
+    def enable_custom_matter_slot(self, state):
+        enabled = (state == Qt.CheckState.Checked)
+        self.custom_matter_input.setEnabled(enabled)
+        self.custom_matter_button.setEnabled(enabled)
+
+        reply = QMessageBox.question(self, 'Reminder', f'This setting must to reload config to take effect. Do you want to reload it now?',
+                                        QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            self.config_changed_signal.emit()
 
     def connect_signal_and_slot(self):
         self.main_resource_button.clicked.connect(self.select_main_resource)
@@ -131,12 +180,17 @@ class ConfigPage(QWidget):
         self.delete_config_button.clicked.connect(self.delete_current_config)
         self.config_name_combobox.currentIndexChanged.connect(self.on_config_selected)
         self.secondary_resource_button.clicked.connect(self.select_secondary_resource)
+        self.custom_matter_button.clicked.connect(self.select_custom_matter)
+
         self.animation_options.currentIndexChanged.connect(lambda enabled=bool(self.animation_options.currentIndex()): self.animation_changed_signal.emit(enabled))
 
         self.theme_options.currentIndexChanged.connect(self.theme_options_changed)
 
         self.enable_default_enter_checkbox.stateChanged.connect(self.enable_default_gate_checkbox_changed)
         self.enable_default_exit_checkbox.stateChanged.connect(self.enable_default_gate_checkbox_changed)
+
+        self.enable_custom_matter.stateChanged.connect(self.enable_custom_matter_slot)
+
 
     def enable_default_gate_checkbox_changed(self, state):
         reply = QMessageBox.question(self, 'Reminder', f'This setting must to reload config to take effect. Do you want to reload it now?',
@@ -161,6 +215,14 @@ class ConfigPage(QWidget):
             base_path = os.getcwd()
             relative_path = os.path.relpath(dir_path, base_path)
             self.secondary_resource_input.setText(relative_path)
+
+    def select_custom_matter(self):
+        file_path, _ = QFileDialog.getOpenFileName(self, "Select", "", "Python File (*.py)")
+        if file_path:
+            base_path = os.getcwd()
+            relative_path = os.path.relpath(file_path, base_path)
+            self.custom_matter_input.setText(relative_path)
+
 
     def add_new_config(self):
         config_name, ok = QInputDialog.getText(self, "New Config", "Input the config name:")
@@ -195,7 +257,9 @@ class ConfigPage(QWidget):
         if current_config_name:
             self.configs[current_config_name] = {
                 "main_resource": self.main_resource_input.text(),
-                "secondary_resource": self.secondary_resource_input.text()
+                "secondary_resource": self.secondary_resource_input.text(),
+                "enable_custom_matter": self.enable_custom_matter.isChecked(),
+                "custom_matter": self.custom_matter_input.text()
             }
             data = {
                 "configs": self.configs,
@@ -223,6 +287,7 @@ class ConfigPage(QWidget):
 
                 current_theme = data.get("current_theme")
 
+
             if animation_enabled:
                 self.animation_options.setCurrentIndex(animation_enabled)
 
@@ -234,6 +299,7 @@ class ConfigPage(QWidget):
 
             if current_theme:
                 self.theme_options.setCurrentIndex(current_theme)
+
             
             for config_name in self.configs.keys():
                 self.config_name_combobox.addItem(config_name)
@@ -253,6 +319,17 @@ class ConfigPage(QWidget):
             config = self.configs[current_config_name]
             self.main_resource_input.setText(config.get("main_resource", ""))
             self.secondary_resource_input.setText(config.get("secondary_resource", ""))
+            enable_custom_matter = config.get("enable_custom_matter")
+            custom_matter = config.get("custom_matter")
+            if enable_custom_matter and enable_custom_matter is True:
+                self.enable_custom_matter.setChecked(True)
+                self.custom_matter_input.setEnabled(True)
+                self.custom_matter_button.setEnabled(True)
+            else:
+                self.enable_custom_matter.setChecked(False)
+
+            if custom_matter:
+                self.custom_matter_input.setText(custom_matter)
 
     def on_config_selected(self):
         self.load_config_to_ui()

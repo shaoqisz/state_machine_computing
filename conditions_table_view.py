@@ -292,7 +292,7 @@ class MyTableView(QTableView):
 
     def __setupTableView(self):
         self.table_model.clear()
-        database_table_header = ['Source', 'Trigger/Event', 'Condition/Guard/Trans', 'Dest', 'Allowed']
+        database_table_header = ['Source', 'Trigger/Event', 'Condition/Action/Guard/Trans', 'Dest', 'Allowed']
         self.table_model.setHorizontalHeaderLabels(database_table_header)
 
         self.setColumnWidth(0, 300)
