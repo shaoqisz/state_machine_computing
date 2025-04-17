@@ -7,7 +7,7 @@ def T1():
 
 def T2():
     print(f'calling {sys._getframe().f_code.co_name}')
-    return False
+    return True
 
 def T3():
     print(f'calling {sys._getframe().f_code.co_name}')

@@ -1968,7 +1968,7 @@ class MainWindow(QMainWindow):
 
         self.save_settings()
 
-        self.config_page.close()
+        self.config_page._close()
 
         event.accept()
 

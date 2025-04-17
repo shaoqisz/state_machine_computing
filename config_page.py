@@ -23,6 +23,8 @@ class ConfigPage(QWidget):
 
     def __init__(self, icon=None):
         super().__init__()
+
+        self.config_has_been_changed = False
         
         self.icon = icon
 
@@ -188,10 +190,16 @@ class ConfigPage(QWidget):
         self.custom_matter_input.setEnabled(enabled)
         self.custom_matter_button.setEnabled(enabled)
 
-        reply = QMessageBox.question(self, 'Reminder', f'This setting must to reload config to take effect. Do you want to reload it now?',
-                                        QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-        if reply == QMessageBox.Yes:
-            self.config_changed_signal.emit()
+        self.config_has_been_changed = True
+
+        self.save_config()
+
+    def input_text_changed_slot(self):
+        self.config_has_been_changed = True
+
+    def custom_matter_input_text_changed_slot(self):
+        self.config_has_been_changed = True
+        self.save_config()
 
     def connect_signal_and_slot(self):
         self.main_resource_button.clicked.connect(self.select_main_resource)
@@ -210,12 +218,13 @@ class ConfigPage(QWidget):
 
         self.enable_custom_matter.stateChanged.connect(self.enable_custom_matter_slot)
 
+        self.main_resource_input.textChanged.connect(self.input_text_changed_slot)
+        self.secondary_resource_input.textChanged.connect(self.input_text_changed_slot)
+        self.custom_matter_input.textChanged.connect(self.custom_matter_input_text_changed_slot)
+
 
     def enable_default_gate_checkbox_changed(self, state):
-        reply = QMessageBox.question(self, 'Reminder', f'This setting must to reload config to take effect. Do you want to reload it now?',
-                                        QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-        if reply == QMessageBox.Yes:
-            self.config_changed_signal.emit()
+        self.config_has_been_changed = True
 
     def theme_options_changed(self, index):
         theme = Theme(index)
@@ -355,12 +364,31 @@ class ConfigPage(QWidget):
 
         self.config_changed_signal.emit()
 
+    def _close(self):
+        self.config_has_been_changed = False
+        self.close()
+
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
-            self.hide()
+            self.close()
+
+    # def hideEvent(self, a0):
+    #     print('hideEvent')
+    #     return super().hideEvent(a0)
+
+    def showEvent(self, a0):
+        self.config_has_been_changed = False
+        return super().showEvent(a0)
 
     def closeEvent(self, a0):
         self.save_config()
+
+        if self.config_has_been_changed is True:
+            reply = QMessageBox.question(self, 'Reminder', f'This setting must to reload config to take effect. Do you want to reload it now?',
+                                            QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if reply == QMessageBox.Yes:
+                self.config_changed_signal.emit()
+
         return super().closeEvent(a0)
 
 class MainWindow(QMainWindow):
