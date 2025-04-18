@@ -95,8 +95,10 @@ class ColorfulTextEdit(QPlainTextEdit):
         if actions is not None and len(actions) > 0:
             space = (len(timestamp) + 7) * ' '
             for action in actions:
-                color_actions_flags += f'{space}<span style="color: magenta;">{action}</span>\n'
-            text = f"{color_ts} {color_left_variable}{color_object_name}{color_func_name}{color_function_params}\n{color_actions_flags}{space}{color_return_code}"
+                color_actions_flags += f'\n{space}<span style="color: magenta;">{action}</span>'
+            if len(color_return_code) > 0:
+                color_return_code = f'\n{space}{color_return_code}'
+            text = f"{color_ts} {color_left_variable}{color_object_name}{color_func_name}{color_function_params}{color_actions_flags}{color_return_code}"
         else:
             text = f"{color_ts} {color_left_variable}{color_object_name}{color_func_name}{color_function_params} {color_return_code}"
 
