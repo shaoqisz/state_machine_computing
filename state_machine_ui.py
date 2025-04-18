@@ -1286,14 +1286,13 @@ class StateMachineWidget(QWidget):
                 # self.warning_error_msg_box.exec()
                 return
 
+            actions = []
             if self.custom_matter is not None:
                 custom_trigger = getattr(self.custom_matter, trigger)
-                actions = []
                 custom_trigger(actions)
                 self.called_trigger_signal.emit(trigger, actions)
-
             else:
-                self.called_trigger_signal.emit(trigger)
+                self.called_trigger_signal.emit(trigger, actions)
             getattr(self.model, trigger)()
 
             # 重绘界面以更新当前状态显示
@@ -1309,7 +1308,7 @@ class StateMachineWidget(QWidget):
             # print(f"source_name={event.state.name}")
             source = event.transition.source 
             dest = event.transition.dest
-            signal.emit(source, dest, old_name, return_code)
+            signal.emit(source, dest, old_name, return_code, [])
             return return_code
         new_conditions_function.__name__ = old_name
         return new_conditions_function
@@ -1355,7 +1354,7 @@ class StateMachineWidget(QWidget):
         def enter_state_function(self, event: EventData):
             source = event.transition.source 
             dest = event.transition.dest
-            signal.emit(source, dest, old_name)
+            signal.emit(source, dest, old_name, [])
         enter_state_function.__name__ = old_name
         return enter_state_function
     
@@ -1363,7 +1362,7 @@ class StateMachineWidget(QWidget):
         def exit_state_function(self, event: EventData):
             source = event.transition.source 
             dest = event.transition.dest
-            signal.emit(source, dest, old_name)
+            signal.emit(source, dest, old_name, [])
         exit_state_function.__name__ = old_name
         return exit_state_function
     
