@@ -13,6 +13,7 @@ from transitions.core import MachineError
 
 from state_machine_core import Matter, CustomStateMachine
 from transitions.core import EventData
+from transitions.extensions.nesting import NestedEvent
 
 from conditions_table_view import TableViewContainsSearchWidget
 from config_page import ConfigPage, Theme
@@ -68,10 +69,10 @@ class State:
 
 class StateMachineWidget(QWidget):
 
-    called_trigger_signal = pyqtSignal(str)
+    called_trigger_signal = pyqtSignal(str, list)
     called_condition_signal = pyqtSignal(str, str, str, bool, list)
-    called_enter_state_signal = pyqtSignal(str, str, str)
-    called_exit_state_signal = pyqtSignal(str, str, str)
+    called_enter_state_signal = pyqtSignal(str, str, str, list)
+    called_exit_state_signal = pyqtSignal(str, str, str, list)
 
     called_set_initial_state_signal = pyqtSignal(str)
     called_new_state_machine_signal = pyqtSignal(str)
@@ -1285,7 +1286,14 @@ class StateMachineWidget(QWidget):
                 # self.warning_error_msg_box.exec()
                 return
 
-            self.called_trigger_signal.emit(trigger)
+            if self.custom_matter is not None:
+                custom_trigger = getattr(self.custom_matter, trigger)
+                actions = []
+                custom_trigger(actions)
+                self.called_trigger_signal.emit(trigger, actions)
+
+            else:
+                self.called_trigger_signal.emit(trigger)
             getattr(self.model, trigger)()
 
             # 重绘界面以更新当前状态显示
@@ -1311,14 +1319,38 @@ class StateMachineWidget(QWidget):
             # print(f"source_name={event.state.name}")
             source = event.transition.source 
             dest = event.transition.dest
-
+            # event_name = event.event.name
+            # print(f'event={event_name}')
             actions = []
             return_code = custom_conditions(actions)
             signal.emit(source, dest, old_name, return_code, actions)
             return return_code
         new_conditions_function.__name__ = old_name
         return new_conditions_function
+
+    def create_custom_enter_state_function(self, old_name, custom_gate, signal):
+        def enter_state_function(self, event: EventData):
+            source = event.transition.source 
+            dest = event.transition.dest
+
+            actions = []
+            custom_gate(actions)
+            signal.emit(source, dest, old_name, actions)
+        enter_state_function.__name__ = old_name
+        return enter_state_function
     
+    def create_custom_exit_state_function(self, old_name, custom_gate, signal):
+        def exit_state_function(self, event: EventData):
+            source = event.transition.source 
+            dest = event.transition.dest
+
+            actions = []
+            custom_gate(actions)
+            signal.emit(source, dest, old_name, actions)
+        exit_state_function.__name__ = old_name
+        return exit_state_function
+    
+
     def create_enter_state_function(self, old_name, signal):
         def enter_state_function(self, event: EventData):
             source = event.transition.source 
@@ -1336,11 +1368,19 @@ class StateMachineWidget(QWidget):
         return exit_state_function
     
     def setup_enter_state_function(self, enter_state_function_name):
-        new_func = self.create_enter_state_function(enter_state_function_name, self.called_enter_state_signal)
+        if self.custom_matter is not None:
+            custom_gate = getattr(self.custom_matter, enter_state_function_name)
+            new_func = self.create_custom_enter_state_function(enter_state_function_name, custom_gate, self.called_enter_state_signal)
+        else:
+            new_func = self.create_enter_state_function(enter_state_function_name, self.called_enter_state_signal)
         setattr(Matter, enter_state_function_name, new_func)
 
     def setup_exit_state_function(self, exit_state_function_name):
-        new_func = self.create_exit_state_function(exit_state_function_name, self.called_exit_state_signal)
+        if self.custom_matter is not None:
+            custom_gate = getattr(self.custom_matter, exit_state_function_name)
+            new_func = self.create_custom_exit_state_function(exit_state_function_name, custom_gate, self.called_enter_state_signal)
+        else:
+            new_func = self.create_exit_state_function(exit_state_function_name, self.called_exit_state_signal)
         setattr(Matter, exit_state_function_name, new_func)
 
     def setup_conditions_allowed_slot(self, conditions, allowed):
@@ -1583,12 +1623,13 @@ class MainWindow(QMainWindow):
         timer = QTimer()
         timer.singleShot(100, self.state_machine._adjust_all_states)
 
-    def trigger_name_slot(self, trigger):
+    def trigger_name_slot(self, trigger, actions=None):
         self.text_edit.append_log(object_name=self.config_page.config_name_combobox.currentText(),
                                   function_name=trigger, 
+                                  actions=actions,
                                   function_type=FunctionType.trigger)
 
-    def condition_message_slot(self, source_name, dest_name, function_name, return_code, actions):
+    def condition_message_slot(self, source_name, dest_name, function_name, return_code, actions=None):
         self.text_edit.append_log(object_name=self.config_page.config_name_combobox.currentText(),
                                   function_name=function_name, 
                                   function_params=[source_name.split("_")[-1], dest_name.split("_")[-1]], 
@@ -1599,14 +1640,16 @@ class MainWindow(QMainWindow):
         if return_code is True:
             self.state_machine.set_source_conditions_focus(source_name, dest_name, function_name)
 
-    def enter_state_message_slot(self, source_name, dest_name, function_name):
+    def enter_state_message_slot(self, source_name, dest_name, function_name, actions=None):
         self.text_edit.append_log(object_name=self.config_page.config_name_combobox.currentText(),
-                                  function_name=function_name, 
+                                  function_name=function_name,
+                                  actions=actions,
                                   function_type=FunctionType.state)
         
-    def exit_state_message_slot(self, source_name, dest_name, function_name):
+    def exit_state_message_slot(self, source_name, dest_name, function_name, actions=None):
         self.text_edit.append_log(object_name=self.config_page.config_name_combobox.currentText(),
                                   function_name=function_name, 
+                                  actions=actions,
                                   function_type=FunctionType.state)
         
     def state_machine_init_slot(self, state_name):

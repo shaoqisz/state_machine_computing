@@ -8,3 +8,7 @@ test/
 dist/
 *.spec
 build/
+smc/
+smc2/
+*.7z
+*.zip

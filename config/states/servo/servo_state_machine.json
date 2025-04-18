@@ -5,15 +5,51 @@
             {
                 "name": "Normal",
                 "children": [
-                    "SwitchOnDisabled",
-                    "ReadyToSwitchOn",
-                    "SwitchOn",
-                    "OperationEnabled",
-                    "QuickStop"
+                    {
+                        "name": "SwitchOnDisabled",
+                        "on_enter": [
+                            "SwitchOnDisabledEntry"
+                        ]
+                    },
+                    {
+                        "name": "ReadyToSwitchOn",
+                        "on_enter": [
+                            "ReadyToSwitchOnEntry"
+                        ]
+                    },
+                    {
+                        "name": "SwitchOn",
+                        "on_enter": [
+                            "SwitchOnEntry"
+                        ]
+                    },
+                    {
+                        "name": "OperationEnabled",
+                        "on_enter": [
+                            "OperationEnabledEntry"
+                        ]
+                    },
+                    {
+                        "name": "QuickStop",
+                        "on_enter": [
+                            "QuickStopEntry"
+                        ]
+                    }
                 ],
                 "initial": "SwitchOnDisabled"
             },
-            "Fault"
+            {
+                "name": "Fault",
+                "on_enter": [
+                    "FaultEntry"
+                ]
+            },
+            {
+                "name": "FaultReactionActive",
+                "on_enter": [
+                    "FaultReactionActiveEntry"
+                ]
+            }
         ]
     }
 ]
