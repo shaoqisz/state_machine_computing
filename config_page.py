@@ -363,6 +363,7 @@ class ConfigPage(QWidget):
         self.load_config_to_ui()
 
         self.config_changed_signal.emit()
+        self.config_has_been_changed = False
 
     def _close(self):
         self.config_has_been_changed = False
@@ -388,6 +389,7 @@ class ConfigPage(QWidget):
                                             QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             if reply == QMessageBox.Yes:
                 self.config_changed_signal.emit()
+                self.config_has_been_changed = False
 
         return super().closeEvent(a0)
 
