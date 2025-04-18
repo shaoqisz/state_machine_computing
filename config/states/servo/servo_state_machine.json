@@ -1,6 +1,6 @@
 [
     {
-        "name": "ServoStateMachine",
+        "name": "DriveSystem",
         "children": [
             {
                 "name": "Normal",
