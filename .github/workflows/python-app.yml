@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: write
+  releases: write
 
 jobs:
   build:
@@ -42,13 +43,21 @@ jobs:
       - name: 查看 dist 目录文件结构
         run: cmd /c "dir /S dist"
 
+      - name: 压缩 dist 目录
+        run: |
+          $compress = @{
+            Path = "dist\*"
+            CompressionLevel = "Fastest"
+            DestinationPath = "dist_archive.zip"
+          }
+          Compress-Archive @compress
+
       - name: 创建并发布 Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.ref_name }}  # 使用推送到仓库的标签名作为 Release 的标签名
           name: Release ${{ github.ref_name }}
           files: |
-            dist/!(res)/**
+            dist_archive.zip
           draft: false
-          prerelease: false
-    
+          prerelease: false    
