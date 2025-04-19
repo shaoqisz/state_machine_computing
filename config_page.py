@@ -356,8 +356,7 @@ class ConfigPage(QWidget):
             else:
                 self.enable_custom_matter.setChecked(False)
 
-            if custom_matter:
-                self.custom_matter_input.setText(custom_matter)
+            self.custom_matter_input.setText(custom_matter)
 
     def on_config_selected(self):
         self.load_config_to_ui()
