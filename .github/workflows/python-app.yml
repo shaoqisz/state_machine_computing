@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: write
+  releases: write
 
 jobs:
   build:
@@ -39,6 +40,9 @@ jobs:
           path: dist/**
           if-no-files-found: error
 
+      - name: 查看 dist 目录文件结构
+        run: dir /S dist
+
       - name: 创建并发布 Release
         uses: softprops/action-gh-release@v1
         with:
@@ -47,4 +51,5 @@ jobs:
           files: |
             dist/**
           draft: false
-          prerelease: false    
+          prerelease: false
+    
