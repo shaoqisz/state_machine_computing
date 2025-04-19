@@ -40,7 +40,7 @@ jobs:
           if-no-files-found: error
 
       - name: 查看 dist 目录文件结构
-        run: dir /S dist
+        run: cmd /c "dir /S dist"
 
       - name: 创建并发布 Release
         uses: softprops/action-gh-release@v1
