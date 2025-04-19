@@ -9,6 +9,6 @@ dist/
 *.spec
 build/
 smc/
-smc2/
+smc*/
 *.7z
 *.zip
