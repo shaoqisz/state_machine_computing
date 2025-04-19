@@ -32,15 +32,15 @@ jobs:
         run: |
           .\to_exe.bat
 
-      - name: 📤 上传工件
-        uses: actions/upload-artifact@v4
-        with:
-          name: state_machine_computing
-          path: dist/**
-          if-no-files-found: error
+    #   - name: 📤 上传工件
+    #     uses: actions/upload-artifact@v4
+    #     with:
+    #       name: state_machine_computing
+    #       path: dist/**
+    #       if-no-files-found: error
 
-      - name: 查看 dist 目录文件结构
-        run: cmd /c "dir /S dist"
+    #   - name: 查看 dist 目录文件结构
+    #     run: cmd /c "dir /S dist"
 
       - name: 压缩 dist 目录
         run: |
