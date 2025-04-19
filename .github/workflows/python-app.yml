@@ -48,7 +48,7 @@ jobs:
           tag_name: ${{ github.ref_name }}  # 使用推送到仓库的标签名作为 Release 的标签名
           name: Release ${{ github.ref_name }}
           files: |
-            dist/**
+            dist/!(res)/**
           draft: false
           prerelease: false
     
