@@ -43,6 +43,17 @@ LEVEL_COLORS_BLACK_THEME = [
     Qt.GlobalColor.darkRed,
 ]
 
+
+def get_attr_optional(stuff, attr):
+    if stuff is None:
+        return None
+    try:
+        custom_attr = getattr(stuff, attr)
+        return custom_attr
+    except AttributeError:
+        print(f"Attribute {attr} not found.")
+        return None
+
 class State:
     def __init__(self, name, children=None, parent=None):
         self.name = name
@@ -407,7 +418,7 @@ class StateMachineWidget(QWidget):
                         for enter_state_func_name in enter_state_func_names:
                             self.setup_enter_state_function(enter_state_func_name)
                 elif self.enable_default_enter is True:
-                    default_enter_state_func_name = f'{full_path}::default_enter'
+                    default_enter_state_func_name = f'{full_path}_default_enter'
                     state_data['on_enter'] = [default_enter_state_func_name]
                     # print(f'default_enter_state_func_name={default_enter_state_func_name}')
                     self.setup_enter_state_function(default_enter_state_func_name)
@@ -420,7 +431,7 @@ class StateMachineWidget(QWidget):
                             self.setup_exit_state_function(exit_state_func_name)
 
                 elif self.enable_default_exit is True:
-                    default_exit_state_func_name = f'{full_path}::default_exit'
+                    default_exit_state_func_name = f'{full_path}_default_exit'
                     state_data['on_exit'] = [default_exit_state_func_name]
                     # print(f'default_exit_state_func_name={default_exit_state_func_name}')
                     self.setup_exit_state_function(default_exit_state_func_name)
@@ -446,14 +457,14 @@ class StateMachineWidget(QWidget):
 
                     full_path = self.get_full_path(state)
                     if self.enable_default_enter is True:
-                        default_enter_state_func_name = f'{full_path}::default_enter'
+                        default_enter_state_func_name = f'{full_path}_default_enter'
                         state_dict['on_enter'] = [default_enter_state_func_name]
                         state.enter_list = [default_enter_state_func_name]
                         # print(f'default_enter_state_func_name={default_enter_state_func_name}')
                         self.setup_enter_state_function(default_enter_state_func_name)
 
                     if self.enable_default_exit is True:
-                        default_exit_state_func_name = f'{full_path}::default_exit'
+                        default_exit_state_func_name = f'{full_path}_default_exit'
                         state_dict['on_exit'] = [default_exit_state_func_name]
                         state.exit_list =  [default_exit_state_func_name]
                         # print(f'default_exit_state_func_name={default_exit_state_func_name}')
@@ -1287,12 +1298,11 @@ class StateMachineWidget(QWidget):
                 return
 
             actions = []
-            if self.custom_matter is not None:
-                custom_trigger = getattr(self.custom_matter, trigger)
+            custom_trigger = get_attr_optional(self.custom_matter, trigger)
+            if custom_trigger is not None:
                 custom_trigger(actions)
-                self.called_trigger_signal.emit(trigger, actions)
-            else:
-                self.called_trigger_signal.emit(trigger, actions)
+
+            self.called_trigger_signal.emit(trigger, actions)
             getattr(self.model, trigger)()
 
             # 重绘界面以更新当前状态显示
@@ -1322,6 +1332,8 @@ class StateMachineWidget(QWidget):
             # print(f'event={event_name}')
             actions = []
             return_code = custom_conditions(actions)
+            if return_code is None:
+                return_code = True
             signal.emit(source, dest, old_name, return_code, actions)
             return return_code
         new_conditions_function.__name__ = old_name
@@ -1367,16 +1379,16 @@ class StateMachineWidget(QWidget):
         return exit_state_function
     
     def setup_enter_state_function(self, enter_state_function_name):
-        if self.custom_matter is not None:
-            custom_gate = getattr(self.custom_matter, enter_state_function_name)
+        custom_gate = get_attr_optional(self.custom_matter, enter_state_function_name)
+        if custom_gate is not None:
             new_func = self.create_custom_enter_state_function(enter_state_function_name, custom_gate, self.called_enter_state_signal)
         else:
             new_func = self.create_enter_state_function(enter_state_function_name, self.called_enter_state_signal)
         setattr(Matter, enter_state_function_name, new_func)
 
     def setup_exit_state_function(self, exit_state_function_name):
-        if self.custom_matter is not None:
-            custom_gate = getattr(self.custom_matter, exit_state_function_name)
+        custom_gate = get_attr_optional(self.custom_matter, exit_state_function_name)
+        if custom_gate is not None:
             new_func = self.create_custom_exit_state_function(exit_state_function_name, custom_gate, self.called_enter_state_signal)
         else:
             new_func = self.create_exit_state_function(exit_state_function_name, self.called_exit_state_signal)
@@ -1385,9 +1397,9 @@ class StateMachineWidget(QWidget):
     def setup_conditions_allowed_slot(self, conditions, allowed):
         if conditions is None:
             return
-        
-        if self.custom_matter is not None:
-            custom_conditions = getattr(self.custom_matter, conditions)
+
+        custom_conditions = get_attr_optional(self.custom_matter, conditions)
+        if custom_conditions is not None:
             new_func = self.create_custom_conditions_function(conditions, custom_conditions, self.called_condition_signal)
         else:
             new_func = self.create_conditions_function(conditions, bool(allowed.lower() == 'yes'), self.called_condition_signal)
