@@ -34,7 +34,7 @@ pip install qtpy5 transitions
     }
 ]
 ```
-2. Configure the `JSON` file in the State Machine File.
+2. Configure this `JSON` file as the State Machine File of the `Configure'.
 
 
 #### Step 2: Define Transitions
@@ -46,7 +46,7 @@ pip install qtpy5 transitions
     {"trigger": "trigger3", "conditions": "state3_state1_trans", "source": "statemachine_state3", "dest": "statemachine_state1"}
 ]
 ```
-2. Configure the `JSON` file in the Transitions Directory.
+2. Configure this `JSON` file's directory in the Transitions Directory of the `Configure`.
 
 #### Step 3: Define Custom Transition Behavior (Optional)
 
@@ -62,7 +62,7 @@ def state1_state2_trans(actions):
     return True
 ```
 
-2. Configure the Python file in the Custom Matter.
+2. Configure this `Python` file in the Custom Matter of the `Configure`.
 
 
 ### Usage
