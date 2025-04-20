@@ -1,6 +1,0 @@
-[
-    {"trigger":"COUCH_MGR_HOR_START_TIMEOUT",       "conditions":"JogToPosTimeoutTrans",        "source":"CouchMgrSM_StartJogToPosState", "dest":"CouchMgrSM_HorStoppedState"}, 
-    {"trigger":"HMC_GO_HOR_MOVE_ANS",               "conditions":"JogToPosTimeoutTrans",        "source":"CouchMgrSM_StartJogToPosState", "dest":"CouchMgrSM_JoggingToPosState"}, 
-    {"trigger":"COUCH_STOP_HOR_JOG_REQ",            "conditions":"AbortHorJogTrans",            "source":"CouchMgrSM_StartJogToPosState", "dest":"CouchMgrSM_HorMotionStoppingState"}
-
-]

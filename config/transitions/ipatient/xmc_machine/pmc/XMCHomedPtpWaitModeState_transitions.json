@@ -1,4 +1,0 @@
-[
-{"trigger":"state_timer",            "conditions":"XMCHomedPtpWaitModeITrans",                           "source":"XMCMachine_XMCEstopClosedSState_XMCHomedPtpJogSState_XMCHomedPtpSState_XMCHomedPtpWaitModeState", "dest":""},
-{"trigger":"PMC_PTP_MODE_ON_BKST",   "conditions":"XMCHomedPtpWaitModeToWaitForStartMotionTrans",        "source":"XMCMachine_XMCEstopClosedSState_XMCHomedPtpJogSState_XMCHomedPtpSState_XMCHomedPtpWaitModeState", "dest":"XMCMachine_XMCEstopClosedSState_XMCHomedPtpJogSState_XMCHomedPtpSState_XMCHomedWaitForStartMotionState"}
-]

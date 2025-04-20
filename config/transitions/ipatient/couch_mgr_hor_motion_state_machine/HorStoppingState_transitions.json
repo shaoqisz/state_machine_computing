@@ -1,8 +1,0 @@
-[
-    {"trigger":"COUCH_STOP_HOR_JOG_ANS",                "conditions":"HorStoppingToStoppedTrans",       "source":"CouchMgrSM_HorStoppingState", "dest":"CouchMgrSM_HorStoppedState"}, 
-    {"trigger":"COUCH_STOP_HOR_ANS",                    "conditions":"HorStoppingToStoppedTrans",       "source":"CouchMgrSM_HorStoppingState", "dest":"CouchMgrSM_HorStoppedState"}, 
-    {"trigger":"COUCH_MGR_HOR_STOP_TIMEOUT",            "conditions":"HorStoppingToChkStatusTrans",     "source":"CouchMgrSM_HorStoppingState", "dest":"CouchMgrSM_HorCheckStatusState"}, 
-    {"trigger":"COUCH_STOP_HOR_REQ",                    "conditions":"InternalTransition",              "source":"CouchMgrSM_HorStoppingState", "dest":""}, 
-    {"trigger":"COUCH_STOP_HOR_JOG_REQ",                "conditions":"InternalTransition",              "source":"CouchMgrSM_HorStoppingState", "dest":""}, 
-    {"trigger":"COUCH_STOP_MOTIONS_BKST",               "conditions":"InternalTransition",              "source":"CouchMgrSM_HorStoppingState", "dest":""}
-]

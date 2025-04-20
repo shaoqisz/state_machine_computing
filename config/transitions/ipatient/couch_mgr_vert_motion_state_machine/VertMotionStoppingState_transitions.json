@@ -1,9 +1,0 @@
-[
-  {"trigger":"COUCH_STOP_VERT_ANS",             "conditions": "Transition",                     "source": "CouchMgrSM_VertMotionStoppingState", "dest": "CouchMgrSM_VertStoppedState"}, 
-  {"trigger":"COUCH_STOP_VERT_REQ",             "conditions": "InternalTransition",             "source": "CouchMgrSM_VertMotionStoppingState", "dest": ""}, 
-  {"trigger":"COUCH_STOP_VERT_JOG_REQ",         "conditions": "InternalTransition",             "source": "CouchMgrSM_VertMotionStoppingState", "dest": ""}, 
-  {"trigger":"COUCH_CONTINUE_VERT_JOG_REQ",     "conditions": "VertJogContinueStoppedIntTrans", "source": "CouchMgrSM_VertMotionStoppingState", "dest": ""}, 
-  {"trigger":"COUCH_REPORT_VERT_POS_BKST",      "conditions": "VertJogReportIntTrans",          "source": "CouchMgrSM_VertMotionStoppingState", "dest": ""}, 
-  {"trigger":"VMC_ONE_SPEED_JOG_ANS",           "conditions": "InternalTransition",             "source": "CouchMgrSM_VertMotionStoppingState", "dest": ""}, 
-  {"trigger":"VMC_PET_GO_VERT_MOVE_ANS",        "conditions": "InternalTransition",             "source": "CouchMgrSM_VertMotionStoppingState", "dest": ""}
-]

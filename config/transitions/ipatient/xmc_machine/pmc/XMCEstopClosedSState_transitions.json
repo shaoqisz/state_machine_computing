@@ -1,8 +1,0 @@
-[
-    {"trigger": "COUCH_ESTOP_CLOSED_BKST",                  "conditions": "XMCCouchEstopClosedITrans",                       "source": "XMCMachine_XMCEstopClosedSState", "dest": ""},
-    {"trigger": "GANTRY_ESTOP_CLOSED_BKST",                 "conditions": "XMCGantryEstopClosedITrans",                      "source": "XMCMachine_XMCEstopClosedSState", "dest": ""}, 
-    {"trigger": "COUCH_PET_READY_FOR_ESTOP_CLOSURE_REQ",    "conditions": "XMCInitializedAxisReadyForEstopClosureITrans",    "source": "XMCMachine_XMCEstopClosedSState", "dest": ""},
-    {"trigger": "COUCH_ESTOP_OPENED_BKST",                  "conditions": "XMCEstopClosedToWaitHwEstopNTrans",               "source": "XMCMachine_XMCEstopClosedSState", "dest": "XMCMachine_XMCAxisInitSState_XMCWaitHwStopState"},
-    {"trigger": "IOMC_OPEN_SERVO_POWER_CONTACTOR",          "conditions": "XMCEstopClosedToRecoveryNTrans",                  "source": "XMCMachine_XMCEstopClosedSState", "dest": "XMCMachine_XMCEstopClosedSState_XMCRecoveryState"}, 
-    {"trigger": "xmc_fault",                                "conditions": "XMCEstopClosedToRecoveryNTrans",                  "source": "XMCMachine_XMCEstopClosedSState", "dest": "XMCMachine_XMCEstopClosedSState_XMCRecoveryState"}
-]

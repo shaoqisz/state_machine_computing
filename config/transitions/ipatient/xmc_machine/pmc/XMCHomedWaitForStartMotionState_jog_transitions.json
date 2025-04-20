@@ -1,5 +1,0 @@
-[
-{"trigger":"state_timer",                "conditions":"XMCHomedWaitForStartMotionTrans",             "source":"XMCMachine_XMCEstopClosedSState_XMCHomedPtpJogSState_XMCHomedJogSState_XMCHomedWaitForStartMotionState" , "dest":"XMCMachine_XMCEstopClosedSState_XMCHomedPtpJogSState_XMCHomedJogSState_XMCHomedPtpMovingState"},
-{"trigger":"PMC_AXIS_IN_POSITION_BKST",  "conditions":"XMCHomedMovingToInPositionNTrans",            "source":"XMCMachine_XMCEstopClosedSState_XMCHomedPtpJogSState_XMCHomedJogSState_XMCHomedWaitForStartMotionState" , "dest":"XMCMachine_XMCEstopClosedSState_XMCHomedPtpJogSState_XMCHomedInPositionState"},
-{"trigger":"PMC_AXIS_START_MOTION_BKST", "conditions":"XMCHomedWaitForStartMotionToMovingTrans",     "source":"XMCMachine_XMCEstopClosedSState_XMCHomedPtpJogSState_XMCHomedJogSState_XMCHomedWaitForStartMotionState" , "dest":"XMCMachine_XMCEstopClosedSState_XMCHomedPtpJogSState_XMCHomedJogSState_XMCHomedPtpMovingState"}
-]

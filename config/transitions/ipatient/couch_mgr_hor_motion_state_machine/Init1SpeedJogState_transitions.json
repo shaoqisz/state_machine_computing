@@ -1,7 +1,0 @@
-[
-    {"trigger":"COUCH_START_HOR_JOG_REQ",           "conditions":"Transition",                      "source":"CouchMgrSM_Init1SpeedJogState", "dest":""}, 
-    {"trigger":"HMC_ONE_SPEED_JOG_ANS",             "conditions":"Init1SpeedToHorJoggingTrans",     "source":"CouchMgrSM_Init1SpeedJogState", "dest":"CouchMgrSM_HorJoggingState"}, 
-    {"trigger":"COUCH_MGR_HOR_START_TIMEOUT",       "conditions":"Init1SpeedToStoppedTrans",        "source":"CouchMgrSM_Init1SpeedJogState", "dest":"CouchMgrSM_HorStoppedState"}, 
-    {"trigger":"COUCH_JOG_NOT_STARTED_BKST",        "conditions":"Hor1SpeedJogNotStartedTrans",     "source":"CouchMgrSM_Init1SpeedJogState", "dest":"CouchMgrSM_HorStoppedState"}, 
-    {"trigger":"COUCH_STOP_HOR_JOG_REQ",            "conditions":"AbortHorJogTrans",                "source":"CouchMgrSM_Init1SpeedJogState", "dest":"CouchMgrSM_HorMotionStoppingState"}
-]

@@ -1,6 +1,0 @@
-[
-{"trigger": "MsgHorFloatDirectionDetectionBKST",  "conditions": "FloatFindDirectonToFloatAssistTrans", "source": "CouchSm_FloatSState_FloatFindDirectionState",   "dest": "CouchSm_FloatSState_FloatAssistState"},
-{"trigger": "MsgHorFloatAssistToFindDirBKST",     "conditions": "FloatAssistToFindDirectionTrans",     "source": "CouchSm_FloatSState_FloatAssistState",          "dest": "CouchSm_FloatSState_FloatFindDirectionState"},
-{"trigger": "MsgHorFloatPressedBKST",             "conditions": "msmf::none",                          "source": "CouchSm_FloatSState_FloatExitState",            "dest": "CouchSm_FloatSState_FloatFindDirectionState"},
-{"trigger": "MsgHorFloatPressedBKST",             "conditions": "msmf::none",                          "source": "CouchSm_FloatSState_FloatExitState",            "dest": "CouchSm_FloatSState_FloatAssistState"}
-]

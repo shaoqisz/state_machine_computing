@@ -1,6 +1,0 @@
-[
-  {"trigger":"COUCH_MGR_VERT_START_TIMEOUT",    "conditions":"VertJogToPosTimeoutTrans",    "source":"CouchMgrSM_StartVertJogToPosState", "dest":"CouchMgrSM_VertStoppedState"},
-  {"trigger":"COUCH_VMC_SPEED_IS_ZERO_BKST",    "conditions":"VertJogCompleteTrans",        "source":"CouchMgrSM_StartVertJogToPosState", "dest":"CouchMgrSM_VertStoppedState"}, 
-  {"trigger":"COUCH_STOP_VERT_JOG_REQ",         "conditions":"VertJogCompleteTrans",        "source":"CouchMgrSM_StartVertJogToPosState", "dest":"CouchMgrSM_VertMotionStoppingState"}, 
-  {"trigger":"VMC_PET_GO_VERT_MOVE_ANS",        "conditions":"Transition",                  "source":"CouchMgrSM_StartVertJogToPosState", "dest":"CouchMgrSM_VertJoggingToPosState"}
-]

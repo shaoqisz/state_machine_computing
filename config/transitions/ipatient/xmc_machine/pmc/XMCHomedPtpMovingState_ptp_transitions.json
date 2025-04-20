@@ -1,7 +1,0 @@
-[
-{"trigger":"PMC_AXIS_POSITIONS_BKST",                   "conditions":"XMCHomedMovingITrans",                                "source":"XMCMachine_XMCEstopClosedSState_XMCHomedPtpJogSState_XMCHomedPtpSState_XMCHomedPtpMovingState", "dest": ""}, 
-{"trigger":"PMC_AXIS_IN_POSITION_BKST",                 "conditions":"XMCHomedMovingToInPositionNTrans",                    "source":"XMCMachine_XMCEstopClosedSState_XMCHomedPtpJogSState_XMCHomedPtpSState_XMCHomedPtpMovingState", "dest":"XMCMachine_XMCEstopClosedSState_XMCHomedPtpJogSState_XMCHomedInPositionState"},
-{"trigger":"PMC_AXIS_POSITIONS_BKST",                   "conditions":"XMCHomedMovingToInPositionBackupNTrans",              "source":"XMCMachine_XMCEstopClosedSState_XMCHomedPtpJogSState_XMCHomedPtpSState_XMCHomedPtpMovingState", "dest":"XMCMachine_XMCEstopClosedSState_XMCHomedPtpJogSState_XMCHomedInPositionState"},
-{"trigger":"state_timer",                               "conditions":"XMCHomedMovingUpdateErrITrans",                       "source":"XMCMachine_XMCEstopClosedSState_XMCHomedPtpJogSState_XMCHomedPtpSState_XMCHomedPtpMovingState", "dest": ""}
-
-]

@@ -12,3 +12,4 @@ smc/
 smc*/
 *.7z
 *.zip
+config/

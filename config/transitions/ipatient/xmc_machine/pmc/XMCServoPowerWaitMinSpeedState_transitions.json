@@ -1,4 +1,0 @@
-[
-{"trigger": "state_timer",               "conditions": "XMCServoPowerWaitMinSpeedToPowerCheckTrans", "source": "XMCMachine_XMCEstopClosedSState_XMCServoPowerWaitMinSpeedState", "dest": "XMCMachine_XMCEstopClosedSState_XMCServoPowerCheckState"},
-{"trigger": "COUCH_PET_HOME_TABLE_REQ",  "conditions": "XMCServoPowerHomeReqITrans",                 "source": "XMCMachine_XMCEstopClosedSState_XMCServoPowerWaitMinSpeedState", "dest": ""}
-]

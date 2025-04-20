@@ -1,9 +1,0 @@
-[
-{"trigger": "MsgInPositionBKST",  "conditions": "StoppingToInPositionTrans",                "source": "CouchSm_HomedJogPtpSState_StoppingState",     "dest": "CouchSm_HomedJogPtpSState_InPositionState"},
-{"trigger": "MsgJogREQ",          "conditions": "StoppingInPositionToMotionSStateJogTrans", "source": "CouchSm_HomedJogPtpSState_StoppingState",     "dest": "CouchSm_HomedJogPtpSState_MotionSState"},
-{"trigger": "MsgPositionMoveREQ", "conditions": "StoppingInPositionToMotionSStatePtpTrans", "source": "CouchSm_HomedJogPtpSState_StoppingState",     "dest": "CouchSm_HomedJogPtpSState_MotionSState"},
-{"trigger": "MsgPositionMoveREQ", "conditions": "StoppingInPositionToMotionSStatePtpTrans", "source": "CouchSm_HomedJogPtpSState_InPositionState",   "dest": "CouchSm_HomedJogPtpSState_MotionSState"},
-{"trigger": "MsgJogREQ",          "conditions": "StoppingInPositionToMotionSStateJogTrans", "source": "CouchSm_HomedJogPtpSState_InPositionState",   "dest": "CouchSm_HomedJogPtpSState_MotionSState"},
-{"trigger": "MsgInPositionBKST",  "conditions": "MotionSToInPositionGuard",                 "source": "CouchSm_HomedJogPtpSState_MotionSState",      "dest": "CouchSm_HomedJogPtpSState_InPositionState"},
-{"trigger": "MsgStopREQ",         "conditions": "msmf::none",                               "source": "CouchSm_HomedJogPtpSState_MotionSState",      "dest": "CouchSm_HomedJogPtpSState_StoppingState"}
-]

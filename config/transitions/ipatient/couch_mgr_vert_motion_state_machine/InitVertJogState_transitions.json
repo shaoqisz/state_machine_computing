@@ -1,6 +1,0 @@
-[
-  {"trigger":"VMC_ONE_SPEED_JOG_ANS",           "conditions":"InitToVertJoggingTrans",  "source":"CouchMgrSM_InitVertJogState", "dest":"CouchMgrSM_VertJoggingState"}, 
-  {"trigger":"VMC_ONE_SPEED_JOG_ANS",           "conditions":"InitToStoppedTrans",      "source":"CouchMgrSM_InitVertJogState", "dest":"CouchMgrSM_VertStoppedState"}, 
-  {"trigger":"COUCH_VERT_JOG_NOT_STARTED_BKST", "conditions":"VertJogNotStartedTrans",  "source":"CouchMgrSM_InitVertJogState", "dest":"CouchMgrSM_VertStoppedState"}, 
-  {"trigger":"COUCH_STOP_VERT_JOG_REQ",         "conditions":"AbortVertJogTrans",       "source":"CouchMgrSM_InitVertJogState", "dest":"CouchMgrSM_VertMotionStoppingState"}
-]

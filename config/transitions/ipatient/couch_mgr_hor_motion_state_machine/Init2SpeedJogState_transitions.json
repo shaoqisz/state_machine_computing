@@ -1,8 +1,0 @@
-[
-    {"trigger":"HMC_TWO_SPEED_JOG_ANS",        "conditions":"Init2SpeedToHorJoggingTrans",      "source":"CouchMgrSM_Init2SpeedJogState", "dest":"CouchMgrSM_HorJoggingState"}, 
-    {"trigger":"HMC_ONE_SPEED_JOG_ANS",        "conditions":"Init2SpeedToHorJoggingTrans",      "source":"CouchMgrSM_Init2SpeedJogState", "dest":"CouchMgrSM_HorJoggingState"}, 
-    {"trigger":"HMC_ONE_SPEED_JOG_ANS",        "conditions":"Init2SpeedToStoppedTrans",         "source":"CouchMgrSM_Init2SpeedJogState", "dest":"CouchMgrSM_HorStoppedState"}, 
-    {"trigger":"COUCH_STOP_HOR_JOG_REQ",       "conditions":"AbortHorJogTrans",                 "source":"CouchMgrSM_Init2SpeedJogState", "dest":"CouchMgrSM_HorStoppedState"}, 
-    {"trigger":"COUCH_JOG_NOT_STARTED_BKST",   "conditions":"HorJogNotStartedTrans",            "source":"CouchMgrSM_Init2SpeedJogState", "dest":"CouchMgrSM_HorStoppedState"}
-
-]

@@ -1,4 +1,0 @@
-[
-    {"trigger":"state_timer",                               "conditions": "XMCWaitCouchTypeITrans",                  "source": "XMCMachine_XMCPowerUpSState_XMCWaitCouchTypeState", "dest": ""},
-    {"trigger":"state_timer",                               "conditions": "XMCWaitCouchTypeToPowerUpTrans",          "source": "XMCMachine_XMCPowerUpSState_XMCWaitCouchTypeState", "dest": "XMCMachine_XMCPowerUpSState_XMCAxisPowerUpState"}
-]

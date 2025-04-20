@@ -1,7 +1,0 @@
-[
-{"trigger": "MsgPositionBKST",             "conditions": "CouchUpdatePositionITrans",     "source": "CouchSm_HomedJogPtpSState",  "dest": ""},
-{"trigger": "MsgHorPositionBKST",          "conditions": "CouchUpdatePositionITrans",     "source": "CouchSm_HomedJogPtpSState",  "dest": ""},
-{"trigger": "MsgSubHorPositionBKST",       "conditions": "CouchUpdatePositionITrans",     "source": "CouchSm_HomedJogPtpSState",  "dest": ""},
-{"trigger": "MsgVertPositionBKST",         "conditions": "CouchUpdatePositionITrans",     "source": "CouchSm_HomedJogPtpSState",  "dest": ""},
-{"trigger": "MsgMultiPurposeTimerBKST",    "conditions": "CouchAxisAvailableCheckITrans", "source": "CouchSm_HomedJogPtpSState",  "dest": ""}
-]

@@ -1,9 +1,0 @@
-[
-    {
-        "name": "statemachine",
-        "children": [
-            "state1", "state2", "state3"
-        ],
-        "initial": "state1"
-    }
-]

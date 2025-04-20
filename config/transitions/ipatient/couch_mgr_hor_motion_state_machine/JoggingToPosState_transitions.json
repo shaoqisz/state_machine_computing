@@ -1,7 +1,0 @@
-[
-    {"trigger":"COUCH_REPORT_HOR_POS_BKST",         "conditions":"JogToPosToStoppedTrans",      "source":"CouchMgrSM_JoggingToPosState", "dest":"CouchMgrSM_HorStoppedState"}, 
-    {"trigger":"COUCH_MGR_HOR_JOG_TIMEOUT",         "conditions":"JogToPosTimeoutTrans",        "source":"CouchMgrSM_JoggingToPosState", "dest":"CouchMgrSM_HorMotionStoppingState"}, 
-    {"trigger":"COUCH_STOP_HOR_JOG_REQ",            "conditions":"HorJogCompleteTrans",         "source":"CouchMgrSM_JoggingToPosState", "dest":"CouchMgrSM_HorMotionStoppingState"}, 
-    {"trigger":"COUCH_CONTINUE_HOR_JOG_REQ",        "conditions":"HorJogContinueIntTrans",      "source":"CouchMgrSM_JoggingToPosState", "dest":""}
-
-]

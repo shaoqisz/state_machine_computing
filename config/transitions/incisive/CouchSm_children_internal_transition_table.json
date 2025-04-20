@@ -1,5 +1,0 @@
-[
-    {"trigger": "MsgStateTimerBKST",    "conditions": "PowerUpIGuard",   "source": "CouchSm_PowerUpState", "dest": ""},
-    {"trigger": "MsgStateTimerBKST",    "conditions": "AxisInitIGuard",  "source": "CouchSm_AxisInitState", "dest": ""}
-
-]

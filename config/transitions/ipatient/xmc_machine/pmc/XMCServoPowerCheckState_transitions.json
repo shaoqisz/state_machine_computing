@@ -1,8 +1,0 @@
-[
-    {"trigger": "COUCH_PET_HOME_TABLE_REQ", "conditions": "XMCServoPowerHomeReqITrans",                 "source": "XMCMachine_XMCEstopClosedSState_XMCServoPowerCheckState", "dest": ""},
-
-    {"trigger": "state_timer",              "conditions": "XMCServoPowerCheckITrans",                   "source": "XMCMachine_XMCEstopClosedSState_XMCServoPowerCheckState", "dest": ""},
-    {"trigger": "state_timer",              "conditions": "XMCServoPowerCheckToRecoveryTrans",          "source": "XMCMachine_XMCEstopClosedSState_XMCServoPowerCheckState", "dest": "XMCMachine_XMCEstopClosedSState_XMCRecoveryState"},
-
-    {"trigger": "state_timer",              "conditions": "XMCServoPowerCheckToPtpWaitModeNTrans",      "source": "XMCMachine_XMCEstopClosedSState_XMCServoPowerCheckState", "dest": "XMCMachine_XMCEstopClosedSState_XMCHomedPtpJogSState_XMCHomedInPositionState"}
-]
